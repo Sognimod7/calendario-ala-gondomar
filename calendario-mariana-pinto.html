@@ -457,6 +457,7 @@
     </div>
     <div class="header-actions">
       <div class="results-io">
+        <button class="btn" id="syncBtn" type="button" title="Vai buscar as marcações mais recentes de quem partilhou este link">🔄 Atualizar</button>
         <button class="btn" id="exportBtn" type="button">⬇ Exportar dados</button>
         <button class="btn" id="importBtn" type="button">⬆ Importar dados</button>
         <input type="file" id="importFile" accept="application/json" style="display:none">
@@ -610,7 +611,7 @@
     <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente.
     <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
     <br><strong>Mariana:</strong> marca a caixa "Mariana" em qualquer jogo de equipa ou torneio para o adicionares à aba 🏓 Mariana — essa aba junta tudo o que estiver marcado, destacado a roxo.
-    <br><strong>Guardar dados:</strong> os resultados e as marcações da Mariana ficam guardados automaticamente neste telemóvel/computador e neste navegador — não se perdem ao atualizar a página. Usa <em>Exportar dados</em> para criar um ficheiro de cópia de segurança ou para os levar para outro dispositivo, e <em>Importar dados</em> para os repor a partir desse ficheiro.
+    <br><strong>Partilha entre dispositivos:</strong> os resultados e as marcações da Mariana são guardados automaticamente e partilhados entre todos os que abrem este link — quando alguém marca algo, aparece nos outros telemóveis/computadores ao fim de alguns segundos (ou de imediato ao clicar <em>🔄 Atualizar</em>). Usa <em>Exportar dados</em> para criar um ficheiro de cópia de segurança, e <em>Importar dados</em> para os repor a partir desse ficheiro.
     <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
   </div>
 
@@ -720,13 +721,18 @@
   const marianaSelections = {}; // keyed like `results` for matches, or by tournament name
   function tournamentKey(t) { return t.name; }
 
-  // ===== LOCAL PERSISTENCE ====================================================
+  // ===== SHARED PERSISTENCE (Firebase Realtime Database) ======================
   // This page runs as its own website (not inside a Claude artifact sandbox),
-  // so localStorage works normally here and keeps selections across refreshes
-  // on this browser/device. Exportar/Importar dados remains the way to move
-  // data between devices or keep an external backup.
+  // so it can talk to a small free cloud database — everyone who opens this
+  // link reads/writes the same shared state, instead of each device keeping
+  // its own local copy. localStorage stays as an instant offline cache so the
+  // page still shows the last known data immediately, before the network
+  // round-trip finishes (and still works if the connection drops).
+  const FIREBASE_BASE = 'https://calendario-tm-mariana-default-rtdb.europe-west1.firebasedatabase.app';
+  const FIREBASE_PATH = 'marianaData';
   const STORAGE_KEY = 'mariana-pinto-dados-v1';
-  function loadPersistedState() {
+
+  function loadLocalCache() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
@@ -735,10 +741,57 @@
       if (parsed && parsed.marianaSelections) Object.assign(marianaSelections, parsed.marianaSelections);
     } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
   }
-  function persistState() {
+  function saveLocalCache() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, marianaSelections }));
-    } catch (e) { /* ignora — continua a funcionar só sem guardar automaticamente */ }
+    } catch (e) { /* ignora */ }
+  }
+
+  // Stored as a JSON-encoded STRING (not a nested object) on purpose: tournament
+  // names contain characters Firebase forbids in keys (e.g. "/" in "IFC Torrense
+  // / Cidade do Seixal") — encoding the whole payload as one string sidesteps
+  // that restriction entirely.
+  async function fetchRemoteState() {
+    try {
+      const res = await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}.json`, { cache: 'no-store' });
+      if (!res.ok) return null;
+      const raw = await res.json();
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; /* offline ou base de dados ainda não configurada */ }
+  }
+  async function pushRemoteState() {
+    try {
+      const payload = JSON.stringify({ results, marianaSelections });
+      await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (e) { /* fica só guardado localmente até à próxima ligação */ }
+  }
+
+  function persistState() {
+    saveLocalCache();
+    pushRemoteState();
+  }
+
+  // Pulls the shared copy and makes it authoritative locally too, so everyone
+  // converges on the same picture. Called on load, on a timer, and via the
+  // manual "Atualizar" button.
+  let syncing = false;
+  async function syncFromRemote(rerender) {
+    if (syncing) return;
+    syncing = true;
+    const remote = await fetchRemoteState();
+    if (remote) {
+      Object.keys(results).forEach(k => delete results[k]);
+      Object.keys(marianaSelections).forEach(k => delete marianaSelections[k]);
+      if (remote.results) Object.assign(results, remote.results);
+      if (remote.marianaSelections) Object.assign(marianaSelections, remote.marianaSelections);
+      saveLocalCache();
+      if (rerender) renderAll();
+    }
+    syncing = false;
   }
   let activeCompId = 'all'; // 'all' = combined "Todos os Jogos" view
   const filters = { volta: 'all', local: 'all', estado: 'all', resultado: 'all', regiao: 'all', categoria: 'all', pontuacao: 'all' };
@@ -1342,8 +1395,20 @@
     document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
   });
 
-  loadPersistedState();
+  // ===== SYNC BUTTON + STARTUP =================================================
+  document.getElementById('syncBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('syncBtn');
+    btn.disabled = true;
+    btn.textContent = '🔄 A atualizar…';
+    await syncFromRemote(true);
+    btn.textContent = '🔄 Atualizar';
+    btn.disabled = false;
+  });
+
+  loadLocalCache();
   renderAll();
+  syncFromRemote(true);
+  setInterval(() => syncFromRemote(true), 20000); // vai buscar marcações novas de quem partilhou este link
 </script>
 </body>
 </html>
