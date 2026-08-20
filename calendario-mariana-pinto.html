@@ -610,7 +610,7 @@
     <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente.
     <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
     <br><strong>Mariana:</strong> marca a caixa "Mariana" em qualquer jogo de equipa ou torneio para o adicionares à aba 🏓 Mariana — essa aba junta tudo o que estiver marcado, destacado a roxo.
-    <br><strong>Guardar dados:</strong> como esta página não guarda nada sozinha, usa <em>Exportar dados</em> para gerar um ficheiro de cópia de segurança (resultados + marcações da Mariana) e <em>Importar dados</em> para os repor da próxima vez que abrires este ficheiro.
+    <br><strong>Guardar dados:</strong> os resultados e as marcações da Mariana ficam guardados automaticamente neste telemóvel/computador e neste navegador — não se perdem ao atualizar a página. Usa <em>Exportar dados</em> para criar um ficheiro de cópia de segurança ou para os levar para outro dispositivo, e <em>Importar dados</em> para os repor a partir desse ficheiro.
     <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
   </div>
 
@@ -716,10 +716,30 @@
 
   // ===== STATE ===============================================================
   // Manually entered results, keyed by `${competitionId}|${encontro}` -> {ours, theirs}
-  // Not persisted automatically (no browser storage) — use Exportar/Importar to keep a copy.
   const results = {};
   const marianaSelections = {}; // keyed like `results` for matches, or by tournament name
   function tournamentKey(t) { return t.name; }
+
+  // ===== LOCAL PERSISTENCE ====================================================
+  // This page runs as its own website (not inside a Claude artifact sandbox),
+  // so localStorage works normally here and keeps selections across refreshes
+  // on this browser/device. Exportar/Importar dados remains the way to move
+  // data between devices or keep an external backup.
+  const STORAGE_KEY = 'mariana-pinto-dados-v1';
+  function loadPersistedState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.results) Object.assign(results, parsed.results);
+      if (parsed && parsed.marianaSelections) Object.assign(marianaSelections, parsed.marianaSelections);
+    } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
+  }
+  function persistState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, marianaSelections }));
+    } catch (e) { /* ignora — continua a funcionar só sem guardar automaticamente */ }
+  }
   let activeCompId = 'all'; // 'all' = combined "Todos os Jogos" view
   const filters = { volta: 'all', local: 'all', estado: 'all', resultado: 'all', regiao: 'all', categoria: 'all', pontuacao: 'all' };
   let tournamentGroupMode = 'data'; // 'data' | 'categoria' — how the Torneios Abertos table is organised
@@ -872,6 +892,7 @@
       // an outcome-dependent filter is active, since row visibility may change.
       updateBadgeInPlace();
       refreshRecordKpi();
+      persistState();
       if (filters.estado !== 'all' || filters.resultado !== 'all') {
         renderAll();
       }
@@ -886,6 +907,7 @@
     cb.addEventListener('change', () => {
       if (cb.checked) marianaSelections[key] = true; else delete marianaSelections[key];
       tr.classList.toggle('mariana-row', cb.checked);
+      persistState();
       if (activeCompId === 'mariana') renderMariana();
     });
   }
@@ -901,6 +923,7 @@
         if (cb.checked) marianaSelections[key] = true; else delete marianaSelections[key];
         const tr = cb.closest('tr');
         if (tr) tr.classList.toggle('mariana-row', cb.checked);
+        persistState();
         if (activeCompId === 'mariana') renderMariana();
       });
     });
@@ -1303,6 +1326,7 @@
         } else {
           Object.assign(results, parsed); // ficheiros antigos (só resultados, sem marcações da Mariana)
         }
+        persistState();
         renderAll();
       } catch (err) {
         alert('Não foi possível ler este ficheiro de dados.');
@@ -1318,6 +1342,7 @@
     document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
   });
 
+  loadPersistedState();
   renderAll();
 </script>
 </body>
