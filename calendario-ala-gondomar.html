@@ -566,7 +566,7 @@
 
   <div class="footer-note">
     <strong>Como atualizar este dashboard:</strong> quando tiveres o calendário de outra competição ou torneio (Taça de Portugal, torneios distritais, etc.), envia o ficheiro na conversa com o Claude e é adicionada uma nova aba — e essa competição passa também a contar automaticamente na aba <em>Todos os Jogos</em>. As abas a tracejado ainda não têm dados carregados.
-    <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente. Como esta página não guarda dados sozinha, usa <em>Exportar resultados</em> para guardar um ficheiro de cópia de segurança e <em>Importar resultados</em> para os repor da próxima vez que abrires este ficheiro.
+    <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente. Os resultados ficam guardados automaticamente neste telemóvel/computador e neste navegador. Usa <em>Exportar resultados</em> para criar um ficheiro de cópia de segurança ou para os levar para outro dispositivo, e <em>Importar resultados</em> para os repor a partir desse ficheiro.
     <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
     <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
   </div>
@@ -618,9 +618,27 @@
     { jornada: 14, volta: 2, date: '2027-02-20', home: true,  opponent: "Sporting CP",            time: '16:00', encontro: '1F054' },
   ];
 
+  const DIVISAO_FEM2_MATCHES = [
+    { jornada: 1,  volta: 1, date: '2026-11-07', home: true,  opponent: "CTM Mirandela B",       time: '10:00', encontro: '2FCA1003' },
+    { jornada: 2,  volta: 1, date: '2026-11-07', home: true,  opponent: "CCR Arrabães",          time: '17:00', encontro: '2FCA1007' },
+    { jornada: 3,  volta: 1, date: '2026-11-21', home: false, opponent: "AR Canidelense",        time: '10:00', encontro: '2FCA1009' },
+    { jornada: 4,  volta: 1, date: '2026-11-21', home: false, opponent: "CA Madalena",           time: '17:00', encontro: '2FCA1014' },
+    { jornada: 5,  volta: 1, date: '2026-12-05', home: false, opponent: "Real Cerveirense 1321", time: '10:00', encontro: '2FCA1019' },
+    { jornada: 6,  volta: 1, date: '2026-12-05', home: false, opponent: "CDC Navais",            time: '17:00', encontro: '2FCA1024' },
+    { jornada: 7,  volta: 1, date: '2027-01-16', home: false, opponent: "AR Novelense",          time: '15:00', encontro: '2FCA1027' },
+    { jornada: 8,  volta: 2, date: '2027-02-06', home: false, opponent: "CCR Arrabães",          time: '10:00', encontro: '2FCA1032' },
+    { jornada: 9,  volta: 2, date: '2027-02-06', home: false, opponent: "CTM Mirandela B",       time: '17:00', encontro: '2FCA1035' },
+    { jornada: 10, volta: 2, date: '2027-02-20', home: true,  opponent: "CA Madalena",           time: '10:00', encontro: '2FCA1037' },
+    { jornada: 11, volta: 2, date: '2027-02-20', home: true,  opponent: "AR Canidelense",        time: '17:00', encontro: '2FCA1041' },
+    { jornada: 12, volta: 2, date: '2027-03-13', home: true,  opponent: "CDC Navais",            time: '10:00', encontro: '2FCA1047' },
+    { jornada: 13, volta: 2, date: '2027-03-13', home: true,  opponent: "Real Cerveirense 1321", time: '17:00', encontro: '2FCA1051' },
+    { jornada: 14, volta: 2, date: '2027-04-10', home: true,  opponent: "AR Novelense",          time: '15:00', encontro: '2FCA1055' },
+  ];
+
   const COMPETITIONS = [
     { id: 'campeonato-masc', label: "Campeonato Masc. — Zona Centro Norte", shortLabel: 'Masc.', subtitle: "2ª Divisão Seniores Masculinos — Zona Centro Norte · 2026/2027", matches: CAMPEONATO_MASC_MATCHES },
     { id: 'divisao-fem',     label: "1ª Divisão Seniores Femininos",         shortLabel: 'Fem.',  subtitle: "1ª Divisão Seniores Femininos · 2026/2027",                        matches: DIVISAO_FEM_MATCHES },
+    { id: 'divisao-fem2',    label: "2ª Divisão Seniores Fem. B — Zona Cont. e Açores 1", shortLabel: 'Fem. B', subtitle: "2ª Divisão Seniores Femininos (equipa B) — Zona Continente e Açores 1 · 2026/2027", matches: DIVISAO_FEM2_MATCHES },
     // { id: 'taca', label: "Taça de Portugal", shortLabel: 'Taça', subtitle: "...", matches: [ ... ] }  // adicionar quando disponível
   ];
 
@@ -673,8 +691,28 @@
 
   // ===== STATE ===============================================================
   // Manually entered results, keyed by `${competitionId}|${encontro}` -> {ours, theirs}
-  // Not persisted automatically (no browser storage) — use Exportar/Importar to keep a copy.
   const results = {};
+
+  // ===== LOCAL PERSISTENCE ====================================================
+  // This page runs as its own website (not inside a Claude artifact sandbox),
+  // so localStorage works normally here and keeps results across refreshes on
+  // this browser/device. Exportar/Importar resultados remains the way to move
+  // data between devices or keep an external backup.
+  const STORAGE_KEY = 'ala-gondomar-resultados-v1';
+  function loadPersistedState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.results) Object.assign(results, parsed.results);
+    } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
+  }
+  function persistState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results }));
+    } catch (e) { /* ignora — continua a funcionar só sem guardar automaticamente */ }
+  }
+
   let activeCompId = 'all'; // 'all' = combined "Todos os Jogos" view
   const filters = { volta: 'all', local: 'all', estado: 'all', resultado: 'all', regiao: 'all', categoria: 'all', pontuacao: 'all' };
   let tournamentGroupMode = 'data'; // 'data' | 'categoria' — how the Torneios Abertos table is organised
@@ -821,6 +859,7 @@
       // an outcome-dependent filter is active, since row visibility may change.
       updateBadgeInPlace();
       refreshRecordKpi();
+      persistState();
       if (filters.estado !== 'all' || filters.resultado !== 'all') {
         renderAll();
       }
@@ -1141,6 +1180,7 @@
       try {
         const parsed = JSON.parse(reader.result);
         Object.assign(results, parsed);
+        persistState();
         renderAll();
       } catch (err) {
         alert('Não foi possível ler este ficheiro de resultados.');
@@ -1156,6 +1196,7 @@
     document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
   });
 
+  loadPersistedState();
   renderAll();
 </script>
 </body>
