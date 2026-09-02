@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendário — Ala Nun'Álvares (Gondomar)</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --surface-2:      #ffffff;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6; /* casa */
+    --series-2:       #eb6834; /* fora */
+    --series-3:       #1baf7a;
+    --status-good:    #0ca30c;
+    --status-critical:#d03b3b;
+    --status-neutral: #898781;
+    --highlight-bg:   #eef5fd;
+    --highlight-ring: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --surface-2:      #212120;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-2:       #d95926;
+      --series-3:       #199e70;
+      --status-good:    #0ca30c;
+      --status-critical:#e66767;
+      --status-neutral: #898781;
+      --highlight-bg:   #16233a;
+      --highlight-ring: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --surface-2:      #212120;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-2:       #d95926;
+    --series-3:       #199e70;
+    --status-good:    #0ca30c;
+    --status-critical:#e66767;
+    --status-neutral: #898781;
+    --highlight-bg:   #16233a;
+    --highlight-ring: #3987e5;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    padding: 24px 16px 64px;
+  }
+  .wrap { max-width: 1220px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .team {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .team-badge {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--series-1);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+    flex-shrink: 0;
+  }
+  .team h1 { font-size: 20px; margin: 0 0 2px; }
+  .team p { margin: 0; color: var(--text-secondary); font-size: 13px; }
+  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:hover { color: var(--text-primary); }
+
+  /* Competition tabs */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .tab[aria-selected="true"] {
+    background: var(--series-1);
+    border-color: var(--series-1);
+    color: #fff;
+    font-weight: 600;
+  }
+  .tab.placeholder {
+    border-style: dashed;
+    color: var(--text-muted);
+    cursor: default;
+  }
+
+  /* KPI row */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .kpi .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .kpi .value {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .kpi.highlight { border-color: var(--highlight-ring); }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .filter-group { display: flex; align-items: center; gap: 6px; }
+  .filter-group label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--text-muted);
+  }
+  .filter-group select {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-primary);
+  }
+  .filter-spacer { flex: 1; }
+  .filter-reset {
+    font-size: 12.5px;
+    color: var(--series-1);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 4px 6px;
+  }
+  .results-io { display: flex; gap: 6px; }
+  .results-io .btn { font-size: 12px; padding: 6px 10px; }
+
+  /* Volta / list sections */
+  .volta {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .volta-title {
+    padding: 14px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--gridline);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .volta-title .count { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  #tournBody { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  .group-toggle { display: flex; gap: 4px; }
+  .group-toggle button {
+    font-family: inherit;
+    font-size: 12px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .group-toggle button.active {
+    background: var(--series-1);
+    border-color: var(--series-1);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .category-group { border-top: 1px solid var(--gridline); }
+  .category-group:first-child { border-top: none; }
+  .category-group-title {
+    padding: 10px 18px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--page-plane);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .category-group-title .count { font-size: 11.5px; font-weight: 400; color: var(--text-muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--gridline);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--gridline);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.next-row { background: var(--highlight-bg); }
+  tbody tr.tournament-combined-row { background: color-mix(in srgb, var(--series-2) 8%, transparent); }
+  tbody tr.tournament-combined-row:hover { background: color-mix(in srgb, var(--series-2) 16%, transparent); }
+  tbody tr.date-conflict-row { background: color-mix(in srgb, var(--series-2) 16%, transparent); }
+  tbody tr.date-conflict-row:hover { background: color-mix(in srgb, var(--series-2) 24%, transparent); }
+  .conflict-badge { margin-left: 6px; font-size: 11px; cursor: help; }
+  .comp-badge.tourn-badge { background: color-mix(in srgb, var(--series-2) 18%, transparent); border-color: color-mix(in srgb, var(--series-2) 45%, transparent); color: var(--series-2); }
+  tbody tr:hover { background: var(--surface-2); }
+
+  .encontro-num {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .jornada-num {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .jornada-combined { color: var(--text-secondary); white-space: nowrap; }
+  .date-cell { color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .time-cell { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.casa { background: color-mix(in srgb, var(--series-1) 16%, transparent); color: var(--series-1); }
+  .badge.fora { background: color-mix(in srgb, var(--series-2) 16%, transparent); color: var(--series-2); }
+
+  .comp-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--series-1) 14%, transparent);
+    color: var(--series-1);
+  }
+  .status-pill.done {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .tournament-name { font-weight: 600; }
+  .tournament-venue { color: var(--text-secondary); }
+
+  .next-pill {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--status-good);
+    background: color-mix(in srgb, var(--status-good) 15%, transparent);
+    border-radius: 6px;
+    padding: 2px 7px;
+    margin-left: 8px;
+  }
+
+  .result-cell { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .score-input {
+    width: 34px;
+    text-align: center;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    padding: 4px 2px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-primary);
+  }
+  .score-input:focus { outline: 2px solid var(--series-1); outline-offset: 1px; }
+  .score-sep { color: var(--text-muted); font-size: 12px; }
+  .result-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    text-transform: uppercase;
+  }
+  .result-badge.win  { color: var(--status-good); background: color-mix(in srgb, var(--status-good) 15%, transparent); }
+  .result-badge.loss { color: var(--status-critical); background: color-mix(in srgb, var(--status-critical) 15%, transparent); }
+  .result-badge.draw { color: var(--status-neutral); background: color-mix(in srgb, var(--status-neutral) 18%, transparent); }
+
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+  .empty-state p { margin: 4px 0; font-size: 13.5px; }
+
+  .footer-note {
+    margin-top: 28px;
+    padding: 14px 18px;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .footer-note strong { color: var(--text-primary); }
+
+  @media (max-width: 760px) {
+    thead { display: none; }
+    tbody td { display: block; padding: 4px 18px; border-bottom: none; }
+    tbody tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--gridline); }
+    tbody td::before {
+      content: attr(data-label);
+      display: inline-block;
+      width: 100px;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="team">
+      <div class="team-badge">ALA</div>
+      <div>
+        <h1>Ala Nun'Álvares (Gondomar)</h1>
+        <p id="compSubtitle">Todas as competições carregadas · 2026/2027</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="results-io">
+        <button class="btn" id="exportBtn" type="button">⬇ Exportar resultados</button>
+        <button class="btn" id="importBtn" type="button">⬆ Importar resultados</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+      <button class="btn" id="themeToggle" type="button">🌓 Tema</button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" id="tabRow"></div>
+
+  <div class="kpis" id="kpiRow"></div>
+
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label for="fVolta">Volta</label>
+      <select id="fVolta">
+        <option value="all">Todas</option>
+        <option value="1">1ª Volta</option>
+        <option value="2">2ª Volta</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="fLocal">Local</label>
+      <select id="fLocal">
+        <option value="all">Todos</option>
+        <option value="casa">Casa</option>
+        <option value="fora">Fora</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="fEstado">Estado</label>
+      <select id="fEstado">
+        <option value="all">Todos</option>
+        <option value="pending">Por realizar</option>
+        <option value="played">Jogados</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="fResultado">Resultado</label>
+      <select id="fResultado">
+        <option value="all">Todos</option>
+        <option value="win">Vitórias</option>
+        <option value="draw">Empates</option>
+        <option value="loss">Derrotas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="fRegiao">Região</label>
+      <select id="fRegiao">
+        <option value="all">Todas</option>
+        <option value="continente">Continente</option>
+        <option value="acores">Açores</option>
+        <option value="madeira">Madeira</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="fCategoria">Categoria</label>
+      <select id="fCategoria">
+        <option value="all">Todas</option>
+        <option value="Sub9">Sub9</option>
+        <option value="Sub11">Sub11</option>
+        <option value="Sub13">Sub13</option>
+        <option value="Sub15">Sub15</option>
+        <option value="Sub17">Sub17</option>
+        <option value="Sub19">Sub19</option>
+        <option value="Seniores">Seniores</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="fPontuacao">Pontuação</label>
+      <select id="fPontuacao">
+        <option value="all">Todas</option>
+        <option value="300">300</option>
+        <option value="500">500</option>
+        <option value="800">800</option>
+        <option value="1250">1250</option>
+      </select>
+    </div>
+    <div class="filter-spacer"></div>
+    <button class="filter-reset" id="resetFilters" type="button">Limpar filtros</button>
+  </div>
+
+  <!-- Combined view: every competition merged into one chronological list -->
+  <div class="volta" id="combinedContainer">
+    <div class="volta-title"><span>Todos os Jogos</span><span class="count" id="allCount"></span></div>
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Competição</th><th>Jornada</th><th>Nº Encontro</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+      </thead>
+      <tbody id="allBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Torneios abertos view: individual open tournaments, not team fixtures -->
+  <div class="volta" id="tournamentsContainer" style="display:none;">
+    <div class="volta-title">
+      <span>Torneios Abertos FPTM</span>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="count" id="tournCount"></span>
+        <div class="group-toggle" id="tournGroupToggle">
+          <button type="button" data-mode="data">Por data</button>
+          <button type="button" data-mode="categoria">Por categoria</button>
+        </div>
+      </div>
+    </div>
+    <div id="tournBody"></div>
+  </div>
+
+  <!-- Single-competition view: split by 1ª / 2ª volta -->
+  <div id="singleCompContainer" style="display:none;">
+    <div class="volta">
+      <div class="volta-title"><span>1ª Volta</span><span class="count" id="v1count"></span></div>
+      <table>
+        <thead>
+          <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+        </thead>
+        <tbody id="v1body"></tbody>
+      </table>
+    </div>
+
+    <div class="volta">
+      <div class="volta-title"><span>2ª Volta</span><span class="count" id="v2count"></span></div>
+      <table>
+        <thead>
+          <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+        </thead>
+        <tbody id="v2body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <strong>Como atualizar este dashboard:</strong> quando tiveres o calendário de outra competição ou torneio (Taça de Portugal, torneios distritais, etc.), envia o ficheiro na conversa com o Claude e é adicionada uma nova aba — e essa competição passa também a contar automaticamente na aba <em>Todos os Jogos</em>. As abas a tracejado ainda não têm dados carregados.
+    <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente. Os resultados ficam guardados automaticamente neste telemóvel/computador e neste navegador. Usa <em>Exportar resultados</em> para criar um ficheiro de cópia de segurança ou para os levar para outro dispositivo, e <em>Importar resultados</em> para os repor a partir desse ficheiro.
+    <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
+    <br><strong>Todos os Jogos + Torneios na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa e os torneios abertos. Um jogo marcado para o mesmo dia de um torneio fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
+    <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
+  </div>
+
+</div>
+
+<script>
+  // ===== DATA MODEL =========================================================
+  // Add new competitions here as new entries in COMPETITIONS — they show up
+  // both as their own tab AND merged into the "Todos os Jogos" combined tab.
+  // Each match: { jornada, volta (1|2), date:'YYYY-MM-DD', home:bool, opponent, time, encontro }
+  const TODAY = new Date().toISOString().slice(0, 10); // data de hoje, calculada sempre que a página é aberta
+
+  const CAMPEONATO_MASC_MATCHES = [
+    { jornada: 1,  volta: 1, date: '2026-10-10', home: true,  opponent: "AR Canidelo",             time: '16:00', encontro: '2MCN005' },
+    { jornada: 2,  volta: 1, date: '2026-10-17', home: false, opponent: "ACR Saavedra Guedes",      time: '15:00', encontro: '2MCN006' },
+    { jornada: 3,  volta: 1, date: '2026-10-31', home: false, opponent: "NCR Valongo B",            time: '15:00', encontro: '2MCN015' },
+    { jornada: 4,  volta: 1, date: '2026-11-14', home: true,  opponent: "CCR Valega",               time: '16:00', encontro: '2MCN017' },
+    { jornada: 5,  volta: 1, date: '2026-11-28', home: false, opponent: "CTM Lousada",              time: '15:00', encontro: '2MCN024' },
+    { jornada: 6,  volta: 1, date: '2026-12-05', home: true,  opponent: "LFC Lourosa",              time: '16:00', encontro: '2MCN028' },
+    { jornada: 7,  volta: 1, date: '2026-12-12', home: false, opponent: "ARC Ponte Nova",           time: '15:00', encontro: '2MCN033' },
+    { jornada: 8,  volta: 1, date: '2027-01-09', home: true,  opponent: "C Campismo SJ Madeira",    time: '16:00', encontro: '2MCN039' },
+    { jornada: 9,  volta: 1, date: '2027-01-16', home: false, opponent: "ACR Valdágua",             time: '15:00', encontro: '2MCN042' },
+    { jornada: 10, volta: 2, date: '2027-01-23', home: false, opponent: "AR Canidelo",              time: '15:00', encontro: '2MCN050' },
+    { jornada: 11, volta: 2, date: '2027-02-06', home: true,  opponent: "ACR Saavedra Guedes",      time: '16:00', encontro: '2MCN051' },
+    { jornada: 12, volta: 2, date: '2027-02-20', home: true,  opponent: "NCR Valongo B",            time: '16:00', encontro: '2MCN060' },
+    { jornada: 13, volta: 2, date: '2027-02-27', home: false, opponent: "CCR Valega",               time: '15:00', encontro: '2MCN062' },
+    { jornada: 14, volta: 2, date: '2027-03-06', home: true,  opponent: "CTM Lousada",              time: '16:00', encontro: '2MCN069' },
+    { jornada: 15, volta: 2, date: '2027-03-20', home: false, opponent: "LFC Lourosa",              time: '15:00', encontro: '2MCN073' },
+    { jornada: 16, volta: 2, date: '2027-04-03', home: true,  opponent: "ARC Ponte Nova",           time: '16:00', encontro: '2MCN078' },
+    { jornada: 17, volta: 2, date: '2027-04-10', home: false, opponent: "C Campismo SJ Madeira",    time: '15:00', encontro: '2MCN084' },
+    { jornada: 18, volta: 2, date: '2027-04-24', home: true,  opponent: "ACR Valdágua",             time: '15:00', encontro: '2MCN087' },
+  ];
+
+  const DIVISAO_FEM_MATCHES = [
+    { jornada: 1,  volta: 1, date: '2026-10-03', home: false, opponent: "CP Alvito",              time: '15:00', encontro: '1F003' },
+    { jornada: 2,  volta: 1, date: '2026-10-04', home: false, opponent: "CTM Mirandela",          time: '11:00', encontro: '1F008' },
+    { jornada: 3,  volta: 1, date: '2026-11-14', home: true,  opponent: "ADC Ponta do Pargo",     time: '16:00', encontro: '1F011' },
+    { jornada: 4,  volta: 1, date: '2026-11-15', home: true,  opponent: "CTM Ponta do Sol",       time: '11:00', encontro: '1F015' },
+    { jornada: 5,  volta: 1, date: '2026-11-21', home: true,  opponent: "GDCS Juncal",            time: '16:00', encontro: '1F017' },
+    { jornada: 6,  volta: 1, date: '2026-11-22', home: true,  opponent: "U Sebastianense FC",     time: '11:00', encontro: '1F021' },
+    { jornada: 7,  volta: 1, date: '2026-12-05', home: false, opponent: "Sporting CP",            time: '15:00', encontro: '1F026' },
+    { jornada: 8,  volta: 2, date: '2027-01-16', home: true,  opponent: "CTM Mirandela",          time: '16:00', encontro: '1F031' },
+    { jornada: 9,  volta: 2, date: '2027-01-17', home: true,  opponent: "CP Alvito",              time: '11:00', encontro: '1F035' },
+    { jornada: 10, volta: 2, date: '2027-02-06', home: false, opponent: "CTM Ponta do Sol",       time: '16:00', encontro: '1F040' },
+    { jornada: 11, volta: 2, date: '2027-02-07', home: false, opponent: "ADC Ponta do Pargo",     time: '11:00', encontro: '1F043' },
+    { jornada: 12, volta: 2, date: '2027-02-13', home: false, opponent: "U Sebastianense FC",     time: '15:00', encontro: '1F046' },
+    { jornada: 13, volta: 2, date: '2027-02-14', home: false, opponent: "GDCS Juncal",            time: '11:00', encontro: '1F049' },
+    { jornada: 14, volta: 2, date: '2027-02-20', home: true,  opponent: "Sporting CP",            time: '16:00', encontro: '1F054' },
+  ];
+
+  const DIVISAO_FEM2_MATCHES = [
+    { jornada: 1,  volta: 1, date: '2026-11-07', home: true,  opponent: "CTM Mirandela B",       time: '10:00', encontro: '2FCA1003' },
+    { jornada: 2,  volta: 1, date: '2026-11-07', home: true,  opponent: "CCR Arrabães",          time: '17:00', encontro: '2FCA1007' },
+    { jornada: 3,  volta: 1, date: '2026-11-21', home: false, opponent: "AR Canidelense",        time: '10:00', encontro: '2FCA1009' },
+    { jornada: 4,  volta: 1, date: '2026-11-21', home: false, opponent: "CA Madalena",           time: '17:00', encontro: '2FCA1014' },
+    { jornada: 5,  volta: 1, date: '2026-12-05', home: false, opponent: "Real Cerveirense 1321", time: '10:00', encontro: '2FCA1019' },
+    { jornada: 6,  volta: 1, date: '2026-12-05', home: false, opponent: "CDC Navais",            time: '17:00', encontro: '2FCA1024' },
+    { jornada: 7,  volta: 1, date: '2027-01-16', home: false, opponent: "AR Novelense",          time: '15:00', encontro: '2FCA1027' },
+    { jornada: 8,  volta: 2, date: '2027-02-06', home: false, opponent: "CCR Arrabães",          time: '10:00', encontro: '2FCA1032' },
+    { jornada: 9,  volta: 2, date: '2027-02-06', home: false, opponent: "CTM Mirandela B",       time: '17:00', encontro: '2FCA1035' },
+    { jornada: 10, volta: 2, date: '2027-02-20', home: true,  opponent: "CA Madalena",           time: '10:00', encontro: '2FCA1037' },
+    { jornada: 11, volta: 2, date: '2027-02-20', home: true,  opponent: "AR Canidelense",        time: '17:00', encontro: '2FCA1041' },
+    { jornada: 12, volta: 2, date: '2027-03-13', home: true,  opponent: "CDC Navais",            time: '10:00', encontro: '2FCA1047' },
+    { jornada: 13, volta: 2, date: '2027-03-13', home: true,  opponent: "Real Cerveirense 1321", time: '17:00', encontro: '2FCA1051' },
+    { jornada: 14, volta: 2, date: '2027-04-10', home: true,  opponent: "AR Novelense",          time: '15:00', encontro: '2FCA1055' },
+  ];
+
+  const COMPETITIONS = [
+    { id: 'campeonato-masc', label: "Campeonato Masc. — Zona Centro Norte", shortLabel: 'Masc.', subtitle: "2ª Divisão Seniores Masculinos — Zona Centro Norte · 2026/2027", matches: CAMPEONATO_MASC_MATCHES },
+    { id: 'divisao-fem',     label: "1ª Divisão Seniores Femininos",         shortLabel: 'Fem.',  subtitle: "1ª Divisão Seniores Femininos · 2026/2027",                        matches: DIVISAO_FEM_MATCHES },
+    { id: 'divisao-fem2',    label: "2ª Divisão Seniores Fem. B — Zona Cont. e Açores 1", shortLabel: 'Fem. B', subtitle: "2ª Divisão Seniores Femininos (equipa B) — Zona Continente e Açores 1 · 2026/2027", matches: DIVISAO_FEM2_MATCHES },
+    // { id: 'taca', label: "Taça de Portugal", shortLabel: 'Taça', subtitle: "...", matches: [ ... ] }  // adicionar quando disponível
+  ];
+
+  // Torneios Abertos FPTM 2026/2027 — provas de inscrição individual, sem
+  // adversário fixo nem resultado de equipa, por isso vivem fora do modelo de
+  // jornadas/competições acima. Lista completa: os 34 torneios do calendário
+  // oficial, com as categorias de escalão que cada um inclui.
+  const TOURNAMENTS = [
+    { name: "XII Torneio Internacional Cidade de Lagos",                    venue: "Pavilhão Municipal de Lagos",                                  city: "Lagos",                                  region: 'continente', points: 800, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Seniores'],          start: '2026-10-17', end: '2026-10-18' },
+    { name: "V Torneio Cidade da Ribeira Grande",                           venue: "Pavilhão do Complexo Desportivo da Ribeira Grande",            city: "Ribeira Grande (São Miguel)",            region: 'acores', points: 800,     categories: ['Sub13','Sub15','Sub17','Sub19'],                            start: '2026-10-17', end: '2026-10-18' },
+    { name: "Open D'Ouro",                                                  venue: "Multiusos de Gondomar",                                        city: "Gondomar",                               region: 'continente', points: 1250, categories: ['Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'],         start: '2026-10-31', end: '2026-11-01' },
+    { name: '35º Torneio "Município de Câmara de Lobos"',                   venue: "Pavilhão Gimnodesportivo do Estreito de Câmara de Lobos/Marcos Freitas", city: "Câmara de Lobos",              region: 'madeira', points: 500,    categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2026-11-14', end: '2026-11-15' },
+    { name: 'III Torneio Aberto "Centenário da Física de Torres Vedras"',   venue: "Pavilhão da Física de Torres Vedras",                          city: "Torres Vedras",                          region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2026-11-14', end: '2026-11-15' },
+    { name: "I Torneio Nacional Academia HS/JFSerreta",                     venue: "Pavilhão da Serreta",                                          city: "Serreta, Angra do Heroísmo (Terceira)",  region: 'acores', points: 300,     categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Seniores'],          start: '2026-11-21', end: '2026-11-22' },
+    { name: "XI Torneio Cidade de Lamego",                                  venue: "Pavilhão Multiusos de Lamego",                                 city: "Lamego",                                 region: 'continente', points: 1250, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2026-11-28', end: '2026-11-29' },
+    { name: "II Fanfarra Operária Gago Coutinho e Sacadura Cabral",         venue: "Pavilhão da EB1/JI da Ribeirinha (Angra do Heroísmo)",         city: "Angra do Heroísmo (Terceira)",           region: 'acores', points: 500,     categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2026-12-05', end: '2026-12-06' },
+    { name: "XI Torneio Cidade de Viseu",                                   venue: "Pavilhão Multiusos de Viseu",                                  city: "Viseu",                                   region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2026-12-12', end: '2026-12-13' },
+    { name: "2º Torneio Aberto Marcos Freitas",                             venue: "Pavilhão Gimnodesportivo do Estreito de Câmara de Lobos/Marcos Freitas", city: "Câmara de Lobos",              region: 'madeira', points: 300,    categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2026-12-12', end: '2026-12-13' },
+    { name: "IV Torneio Cidade Praia da Vitória",                           venue: "Pavilhão Desportivo do Juncal",                                city: "Praia da Vitória (Terceira)",            region: 'acores', points: 500,     categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2026-12-19', end: '2026-12-20' },
+    { name: "VI Torneio Nacional de Ténis de Mesa — Fátima, Cidade da Paz", venue: "Centro Estudos de Fátima",                                     city: "Fátima, Ourém",                          region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2027-01-09', end: '2027-01-10' },
+    { name: "XV Torneio João Monteiro",                                     venue: "Pavilhão do CIR Laranjeiro",                                   city: "Laranjeiro, Almada",                     region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Sub19','Seniores'],          start: '2027-01-16', end: '2027-01-17' },
+    { name: '8º Torneio "Município de Machico/Duarte Spínola"',            venue: "Pavilhão Gimnodesportivo do Caniçal",                          city: "Caniçal, Machico",                       region: 'madeira', points: 800,    categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2027-01-23', end: '2027-01-24' },
+    { name: "2º Torneio Madalena do Pico",                                  venue: "Pavilhão da Escola Cardeal Costa Nunes",                       city: "Madalena (Pico)",                        region: 'acores', points: 300,     categories: ['Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'],         start: '2027-01-23', end: '2027-01-24' },
+    { name: "XXII Torneio IFC Torrense / Cidade do Seixal",                 venue: "Pavilhão Municipal da Torre da Marinha",                       city: "Torre da Marinha, Seixal",               region: 'continente', points: 1250, categories: ['Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'],         start: '2027-01-30', end: '2027-01-31' },
+    { name: "XXI Torneio de Ténis de Mesa de Vagos",                        venue: "Pavilhão Municipal de Vagos",                                  city: "Vagos",                                   region: 'continente', points: 800, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2027-02-13', end: '2027-02-14' },
+    { name: "II Torneio dos Valonguitos",                                   venue: "Pavilhão Municipal de Campo nº1",                              city: "Campo, Valongo",                         region: 'continente', points: 300, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2027-02-13', end: '2027-02-14' },
+    { name: "50.º Torneio Internacional Cidade do Porto",                   venue: "Pavilhão Nicolau Nasoni",                                      city: "Porto",                                   region: 'continente', points: 800, categories: ['Sub11','Sub13','Sub15','Sub19'],                           start: '2027-02-20', end: '2027-02-21' },
+    { name: "XI Torneio Transmontano — Reino Maravilhoso",                  venue: "Pavilhão dos Desportos de Vila Real",                          city: "Vila Real",                              region: 'continente', points: 1250, categories: ['Sub9','Sub11','Sub13','Sub17','Seniores'],                  start: '2027-02-27', end: '2027-02-28' },
+    { name: '25º Torneio Aberto "Município da Ponta do Sol"',              venue: "Pavilhão Gimnodesportivo da Ponta do Sol",                     city: "Ponta do Sol",                           region: 'madeira', points: 500,    categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2027-03-06', end: '2027-03-07' },
+    { name: "XXVI Torneio Cidade de Gaia",                                  venue: "Pavilhão Municipal Atlântico da Madalena",                     city: "Madalena, Vila Nova de Gaia",            region: 'continente', points: 500, categories: ['Sub11','Sub13','Sub15','Sub19'],                           start: '2027-03-06', end: '2027-03-07' },
+    { name: "Torneio Nacional Cidade de Vizela",                            venue: "Pavilhão Municipal de Vizela",                                 city: "Vizela",                                  region: 'continente', points: 500, categories: ['Sub13','Sub17','Sub19','Seniores'],                        start: '2027-03-20', end: '2027-03-21' },
+    { name: "O Torneio Cidade Angra do Heroísmo",                           venue: "EB1/JI da Ribeirinha (Angra do Heroísmo)",                     city: "Angra do Heroísmo (Terceira)",           region: 'acores', points: 300,     categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2027-03-20', end: '2027-03-21' },
+    { name: "XI Torneio Cidade da Marinha Grande",                          venue: "Pavilhão Municipal Nery Capucho",                              city: "Marinha Grande",                         region: 'continente', points: 800, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2027-03-27', end: '2027-03-28' },
+    { name: "IV Torneio de Ténis de Mesa CR Bougado — Município da Trofa",  venue: "Pavilhão do Centro Recreativo Bougado",                        city: "Bougado, Trofa",                         region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Seniores'],                  start: '2027-03-27', end: '2027-03-28' },
+    { name: "27º Torneio Internacional de Ténis de Mesa Póvoa de Varzim",   venue: "Pavilhão Municipal da Póvoa de Varzim",                        city: "Póvoa de Varzim",                        region: 'continente', points: 1250, categories: ['Sub15','Sub17','Sub19','Seniores'],                        start: '2027-04-03', end: '2027-04-04' },
+    { name: "20º Torneio Cidade de Lourosa",                                venue: "Pavilhão Municipal Mozelos",                                   city: "Mozelos, Santa Maria da Feira",          region: 'continente', points: 800, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19'],             start: '2027-04-10', end: '2027-04-11' },
+    { name: "XV Torneio Tiago Apolónia",                                    venue: "Pavilhão do CIR Laranjeiro",                                   city: "Laranjeiro, Almada",                     region: 'continente', points: 300, categories: ['Sub9','Sub11','Sub13','Sub15','Sub19','Seniores'],          start: '2027-04-10', end: '2027-04-11' },
+    { name: "XXX Torneio Internacional Cidade de Vila do Conde",           venue: "Pavilhão de Desportos de Vila do Conde",                       city: "Vila do Conde",                          region: 'continente', points: 1250, categories: ['Sub9','Sub11','Sub13','Sub15','Sub19','Seniores'],          start: '2027-04-24', end: '2027-04-25' },
+    { name: "14º Torneio Internacional de Condeixa-a-Nova",                venue: "Pavilhão Municipal de Condeixa-a-Nova",                        city: "Condeixa-a-Nova",                        region: 'continente', points: 800, categories: ['Sub15','Sub19','Seniores'],                                 start: '2027-05-01', end: '2027-05-02' },
+    { name: "IV Torneio Cidade de Leiria",                                  venue: "Pavilhão Municipal dos Pousos",                                city: "Leiria",                                  region: 'continente', points: 300, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2027-05-22', end: '2027-05-23' },
+    { name: "LXIV Torneio Cidade de Lisboa",                                venue: "Pavilhão do CIR Laranjeiro",                                   city: "Laranjeiro, Almada",                     region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2027-06-05', end: '2027-06-06' },
+    { name: "18º Torneio Internacional de Ténis de Mesa das Taipas",       venue: "Pavilhão Gimnodesportiva da E.B. 2,3 de Caldas das Taipas",    city: "Caldas das Taipas, Guimarães",           region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2027-06-26', end: '2027-06-27' },
+  ];
+
+  // Tabs shown as "por adicionar" — send the calendar file to fill any of these in.
+  const PLACEHOLDER_TABS = [
+    { label: "Taça de Portugal (por adicionar)" },
+    { label: "+ Outro torneio (por adicionar)" },
+  ];
+
+  // ===== STATE ===============================================================
+  // Manually entered results, keyed by `${competitionId}|${encontro}` -> {ours, theirs}
+  const results = {};
+
+  // ===== LOCAL PERSISTENCE ====================================================
+  // This page runs as its own website (not inside a Claude artifact sandbox),
+  // so localStorage works normally here and keeps results across refreshes on
+  // this browser/device. Exportar/Importar resultados remains the way to move
+  // data between devices or keep an external backup.
+  const STORAGE_KEY = 'ala-gondomar-resultados-v1';
+  function loadPersistedState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.results) Object.assign(results, parsed.results);
+    } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
+  }
+  function persistState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results }));
+    } catch (e) { /* ignora — continua a funcionar só sem guardar automaticamente */ }
+  }
+
+  let activeCompId = 'all'; // 'all' = combined "Todos os Jogos" view
+  const filters = { volta: 'all', local: 'all', estado: 'all', resultado: 'all', regiao: 'all', categoria: 'all', pontuacao: 'all' };
+  let tournamentGroupMode = 'data'; // 'data' | 'categoria' — how the Torneios Abertos table is organised
+  const CATEGORY_ORDER = ['Sub9', 'Sub11', 'Sub13', 'Sub15', 'Sub17', 'Sub19', 'Seniores'];
+  let currentScopeMatches = []; // matches currently on screen, used to refresh the Registo KPI live
+
+  function resultKey(compId, encontro) { return compId + '|' + encontro; }
+  function outcomeOf(r) {
+    if (!r || r.ours == null || r.theirs == null || r.ours === '' || r.theirs === '') return null;
+    const o = Number(r.ours), t = Number(r.theirs);
+    if (Number.isNaN(o) || Number.isNaN(t)) return null;
+    if (o > t) return 'win';
+    if (o < t) return 'loss';
+    return 'draw';
+  }
+  function computeRecordGeneric(matches) {
+    let wins = 0, draws = 0, losses = 0;
+    matches.forEach(m => {
+      const o = outcomeOf(results[resultKey(m._compId, m.encontro)]);
+      if (o === 'win') wins++; else if (o === 'draw') draws++; else if (o === 'loss') losses++;
+    });
+    return { wins, draws, losses };
+  }
+  function refreshRecordKpi() {
+    const el = document.getElementById('kpiRecordValue');
+    if (!el) return;
+    const { wins, draws, losses } = computeRecordGeneric(currentScopeMatches);
+    el.textContent = `${wins}-${draws}-${losses}`;
+  }
+
+  // ===== ERROR SURFACING ========================================================
+  // If something throws (e.g. a browser-specific quirk), show it on screen
+  // instead of leaving the tables silently empty — makes remote bug reports
+  // ("no iPhone não aparecem dados") actionable without guesswork.
+  function showFatalError(err) {
+    try {
+      let banner = document.getElementById('fatalErrorBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'fatalErrorBanner';
+        banner.style.cssText = 'background:#fdeaea;border:1px solid #d03b3b;color:#7a1f1f;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;white-space:pre-wrap;';
+        document.querySelector('.wrap').insertBefore(banner, document.querySelector('.wrap').firstChild);
+      }
+      banner.textContent = 'Ocorreu um erro ao carregar os dados: ' + (err && err.message ? err.message : String(err)) + (err && err.stack ? ('\n' + err.stack) : '');
+    } catch (e2) { /* nothing more we can do */ }
+  }
+  window.addEventListener('error', (ev) => showFatalError(ev.error || ev));
+
+  // ===== HELPERS ==============================================================
+  const WEEKDAYS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  function fmtDate(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    const wd = WEEKDAYS[d.getDay()].slice(0,3);
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = d.getFullYear();
+    return `${wd}, ${dd}-${mm}-${yy}`;
+  }
+  function escapeAttr(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function currentCompetition() { return COMPETITIONS.find(c => c.id === activeCompId); }
+  function buildAugmentedMatches(competition) {
+    return competition.matches.map(m => ({ ...m, _compId: competition.id, _compLabel: competition.shortLabel }));
+  }
+  function allAugmentedMatches() {
+    return COMPETITIONS.flatMap(buildAugmentedMatches);
+  }
+  function passesFilter(m) {
+    if (filters.volta !== 'all' && String(m.volta) !== filters.volta) return false;
+    if (filters.local === 'casa' && !m.home) return false;
+    if (filters.local === 'fora' && m.home) return false;
+    const outcome = outcomeOf(results[resultKey(m._compId, m.encontro)]);
+    const isPlayed = outcome !== null;
+    if (filters.estado === 'pending' && isPlayed) return false;
+    if (filters.estado === 'played' && !isPlayed) return false;
+    if (filters.resultado !== 'all' && outcome !== filters.resultado) return false;
+    return true;
+  }
+  // Torneios não têm volta/local/resultado nem "jogado" — só entram na vista
+  // "Todos os Jogos" quando nenhum desses filtros de jogos de equipa está ativo.
+  function passesFilterEvent(e) {
+    if (e._kind === 'tournament') {
+      if (filters.volta !== 'all' || filters.local !== 'all' || filters.estado !== 'all' || filters.resultado !== 'all') return false;
+      return true;
+    }
+    return passesFilter(e);
+  }
+  // Torneios que decorrem numa dada data (início ou fim inclusive) — usado para
+  // assinalar jogos de equipa marcados para o mesmo dia de um torneio aberto.
+  function tournamentsOnDate(dateIso) {
+    return TOURNAMENTS.filter(t => dateIso >= t.start && dateIso <= t.end);
+  }
+  function emptyRow(colspan, totalAvailable) {
+    return `<tr><td colspan="${colspan}"><div class="empty-state"><p>Sem jogos correspondentes${totalAvailable ? ' ao filtro aplicado' : ' — ainda não há dados carregados'}.</p></div></td></tr>`;
+  }
+
+  // ===== ROW BUILDING (shared by both views) ===================================
+  function makeRow(m, nextMatch, opts) {
+    const isNext = nextMatch && m._compId === nextMatch._compId && m.encontro === nextMatch.encontro;
+    const key = resultKey(m._compId, m.encontro);
+    const r = results[key] || {};
+    const outcome = outcomeOf(r);
+    const tr = document.createElement('tr');
+    const conflictTourns = opts.combined ? tournamentsOnDate(m.date) : [];
+    tr.className = [isNext ? 'next-row' : '', conflictTourns.length ? 'date-conflict-row' : ''].filter(Boolean).join(' ');
+
+    const nextPill = isNext ? '<span class="next-pill">Próximo</span>' : '';
+    const conflictBadge = conflictTourns.length
+      ? `<span class="conflict-badge" title="${escapeAttr('Torneio(s) na mesma data: ' + conflictTourns.map(t => t.name).join(' · '))}">🏆</span>`
+      : '';
+    const encontroCell = `<td data-label="Nº Encontro"><span class="encontro-num">${m.encontro}</span></td>`;
+    const dateCell = `<td data-label="Data" class="date-cell">${fmtDate(m.date)}${conflictBadge}</td>`;
+    const localCell = `<td data-label="Local">${m.home ? '<span class="badge casa">🏠 Casa</span>' : '<span class="badge fora">✈️ Fora</span>'}</td>`;
+    const oppCell = `<td data-label="Adversário">${m.opponent}</td>`;
+    const timeCell = `<td data-label="Horário" class="time-cell">${m.time}</td>`;
+    const resultCell = `<td data-label="Nosso resultado">
+        <div class="result-cell">
+          <input type="number" min="0" class="score-input ours-input" value="${r.ours ?? ''}" aria-label="Nosso resultado">
+          <span class="score-sep">–</span>
+          <input type="number" min="0" class="score-input theirs-input" value="${r.theirs ?? ''}" aria-label="Resultado do adversário">
+          ${outcome ? `<span class="result-badge ${outcome}">${outcome === 'win' ? 'V' : outcome === 'loss' ? 'D' : 'E'}</span>` : ''}
+        </div>
+      </td>`;
+
+    if (opts.combined) {
+      const compCell = `<td data-label="Competição"><span class="comp-badge">${m._compLabel || '—'}</span></td>`;
+      const jornadaCell = `<td data-label="Jornada"><span class="jornada-combined">${m.volta}ª volta · J${m.jornada}</span>${nextPill}</td>`;
+      tr.innerHTML = dateCell + compCell + jornadaCell + encontroCell + localCell + oppCell + timeCell + resultCell;
+    } else {
+      const jornadaCell = `<td data-label="Jornada"><span class="jornada-num">${m.jornada}ª</span>${nextPill}</td>`;
+      tr.innerHTML = encontroCell + jornadaCell + dateCell + localCell + oppCell + timeCell + resultCell;
+    }
+
+    wireResultInputs(tr, key);
+    return tr;
+  }
+
+  // Linha de um torneio aberto dentro da vista combinada "Todos os Jogos" —
+  // reaproveita as mesmas colunas dos jogos de equipa (não tem adversário fixo
+  // nem resultado, por isso alguns campos ficam adaptados) para que, ordenado
+  // por data, seja fácil ver se há jogos marcados para o mesmo dia de um torneio.
+  function makeTournamentCombinedRow(t) {
+    const tr = document.createElement('tr');
+    tr.className = 'tournament-combined-row';
+    const rangeLabel = t.end !== t.start ? `${fmtDate(t.start)} – ${fmtDate(t.end)}` : fmtDate(t.start);
+    tr.innerHTML = `
+      <td data-label="Data" class="date-cell">${rangeLabel}</td>
+      <td data-label="Competição"><span class="comp-badge tourn-badge">🏆 Torneio</span></td>
+      <td data-label="Jornada"><span class="jornada-combined">${t.name}</span></td>
+      <td data-label="Nº Encontro">—</td>
+      <td data-label="Local">${t.city}</td>
+      <td data-label="Adversário"><strong>${t.categories.join(', ')}</strong></td>
+      <td data-label="Horário"><span class="comp-badge">${REGION_LABELS[t.region] || t.region}</span></td>
+      <td data-label="Nosso resultado">—</td>`;
+    return tr;
+  }
+
+  function wireResultInputs(tr, key) {
+    const oursInput = tr.querySelector('.ours-input');
+    const theirsInput = tr.querySelector('.theirs-input');
+    const resultCellEl = tr.querySelector('.result-cell');
+    function updateBadgeInPlace() {
+      const outcome = outcomeOf(results[key]);
+      let badgeEl = resultCellEl.querySelector('.result-badge');
+      if (outcome) {
+        const text = outcome === 'win' ? 'V' : outcome === 'loss' ? 'D' : 'E';
+        if (!badgeEl) { badgeEl = document.createElement('span'); resultCellEl.appendChild(badgeEl); }
+        badgeEl.className = `result-badge ${outcome}`;
+        badgeEl.textContent = text;
+      } else if (badgeEl) {
+        badgeEl.remove();
+      }
+    }
+    function commit() {
+      const oursVal = oursInput.value;
+      const theirsVal = theirsInput.value;
+      if (oursVal === '' && theirsVal === '') {
+        delete results[key];
+      } else {
+        results[key] = { ours: oursVal, theirs: theirsVal };
+      }
+      // Lightweight update: don't rebuild the whole table (would steal focus
+      // while moving between the two score inputs). Only rebuild fully when
+      // an outcome-dependent filter is active, since row visibility may change.
+      updateBadgeInPlace();
+      refreshRecordKpi();
+      persistState();
+      if (filters.estado !== 'all' || filters.resultado !== 'all') {
+        renderAll();
+      }
+    }
+    oursInput.addEventListener('change', commit);
+    theirsInput.addEventListener('change', commit);
+  }
+
+  // ===== KPIs ==================================================================
+  function renderKpis(matches, nextMatch, totalLabel, totalTitle) {
+    const homeCount = matches.filter(m => m.home).length;
+    const awayCount = matches.filter(m => !m.home).length;
+    const { wins, draws, losses } = computeRecordGeneric(matches);
+
+    const kpiRow = document.getElementById('kpiRow');
+    kpiRow.innerHTML = '';
+    const kpis = [
+      {
+        label: 'Próximo jogo',
+        value: nextMatch ? fmtDate(nextMatch.date) : '—',
+        sub: nextMatch ? `${nextMatch._compLabel ? nextMatch._compLabel + ' · ' : ''}${nextMatch.home ? 'vs (casa)' : '@ (fora)'} ${nextMatch.opponent} · ${nextMatch.time}` : 'Sem jogos agendados',
+        highlight: true
+      },
+      { label: totalTitle, value: String(matches.length), sub: totalLabel },
+      { label: 'Jogos em casa', value: String(homeCount), sub: 'Casa' },
+      { label: 'Jogos fora', value: String(awayCount), sub: 'Fora' },
+      { label: 'Registo (V-E-D)', value: `${wins}-${draws}-${losses}`, sub: 'Com base nos resultados introduzidos', id: 'kpiRecordValue' },
+    ];
+    kpis.forEach(k => {
+      const div = document.createElement('div');
+      div.className = 'kpi' + (k.highlight ? ' highlight' : '');
+      const idAttr = k.id ? ` id="${k.id}"` : '';
+      div.innerHTML = `<div class="label">${k.label}</div><div class="value"${idAttr}>${k.value}</div><div class="sub">${k.sub}</div>`;
+      kpiRow.appendChild(div);
+    });
+  }
+
+  // ===== RENDER: TABS =========================================================
+  function renderTabs() {
+    const tabRow = document.getElementById('tabRow');
+    tabRow.innerHTML = '';
+
+    const allBtn = document.createElement('button');
+    allBtn.className = 'tab';
+    allBtn.setAttribute('role', 'tab');
+    allBtn.setAttribute('aria-selected', String(activeCompId === 'all'));
+    allBtn.textContent = '📋 Todos os Jogos';
+    allBtn.addEventListener('click', () => { activeCompId = 'all'; renderAll(); });
+    tabRow.appendChild(allBtn);
+
+    COMPETITIONS.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'tab';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(c.id === activeCompId));
+      btn.textContent = c.label;
+      btn.addEventListener('click', () => {
+        activeCompId = c.id;
+        renderAll();
+      });
+      tabRow.appendChild(btn);
+    });
+
+    const tournBtn = document.createElement('button');
+    tournBtn.className = 'tab';
+    tournBtn.setAttribute('role', 'tab');
+    tournBtn.setAttribute('aria-selected', String(activeCompId === 'torneios'));
+    tournBtn.textContent = '🏆 Torneios Abertos';
+    tournBtn.addEventListener('click', () => { activeCompId = 'torneios'; renderAll(); });
+    tabRow.appendChild(tournBtn);
+
+    PLACEHOLDER_TABS.forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'tab placeholder';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', 'false');
+      btn.title = "Envia o calendário para adicionar esta competição";
+      btn.textContent = p.label;
+      tabRow.appendChild(btn);
+    });
+  }
+
+  // ===== RENDER: COMBINED VIEW ("Todos os Jogos") =============================
+  function renderCombined() {
+    document.getElementById('combinedContainer').style.display = '';
+    document.getElementById('singleCompContainer').style.display = 'none';
+    const compNames = COMPETITIONS.map(c => c.shortLabel).join(' + ');
+    document.getElementById('compSubtitle').textContent = `Todas as competições e Torneios Abertos carregados (${compNames} + Torneios) · 2026/2027`;
+
+    const matches = allAugmentedMatches().sort((a,b) => a.date.localeCompare(b.date));
+    currentScopeMatches = matches;
+    const nextMatch = matches.find(m => m.date >= TODAY) || null;
+
+    renderKpis(matches, nextMatch, `${COMPETITIONS.length} competições carregadas`, 'Jogos totais');
+
+    // Junta jogos de equipa e torneios abertos numa só lista ordenada por data,
+    // para se ver de imediato se algum jogo calha no mesmo dia de um torneio
+    // (jogos nessa situação ficam com o selo 🏆 e destacados a amarelo).
+    const events = [
+      ...matches.map(m => ({ ...m, _kind: 'match' })),
+      ...TOURNAMENTS.map(t => ({ ...t, _kind: 'tournament', date: t.start })),
+    ].sort((a, b) => a.date.localeCompare(b.date));
+
+    const rows = events.filter(passesFilterEvent);
+    document.getElementById('allCount').textContent = `${rows.length} de ${events.length} eventos (jogos + torneios)`;
+    const body = document.getElementById('allBody');
+    body.innerHTML = '';
+    if (!rows.length) {
+      body.innerHTML = emptyRow(8, events.length);
+      return;
+    }
+    rows.forEach(e => {
+      try { body.appendChild(e._kind === 'tournament' ? makeTournamentCombinedRow(e) : makeRow(e, nextMatch, { combined: true })); }
+      catch (err) { showFatalError(err); }
+    });
+  }
+
+  // ===== RENDER: SINGLE COMPETITION VIEW =======================================
+  function renderSingle(competition) {
+    document.getElementById('combinedContainer').style.display = 'none';
+    document.getElementById('singleCompContainer').style.display = '';
+    document.getElementById('compSubtitle').textContent = competition.subtitle;
+
+    const matches = buildAugmentedMatches(competition).sort((a,b) => a.date.localeCompare(b.date));
+    currentScopeMatches = matches;
+    const nextMatch = matches.find(m => m.date >= TODAY) || null;
+
+    renderKpis(matches, nextMatch, '1ª + 2ª volta', 'Jornadas totais');
+
+    function renderVolta(voltaNum, bodyId, countId) {
+      const allInVolta = matches.filter(m => m.volta === voltaNum).sort((a,b) => a.jornada - b.jornada);
+      const rows = allInVolta.filter(passesFilter);
+      document.getElementById(countId).textContent = `${rows.length} de ${allInVolta.length} jornadas`;
+      const body = document.getElementById(bodyId);
+      body.innerHTML = '';
+      if (!rows.length) {
+        body.innerHTML = emptyRow(7, allInVolta.length);
+        return;
+      }
+      rows.forEach(m => {
+        try { body.appendChild(makeRow(m, nextMatch, { combined: false })); }
+        catch (e) { showFatalError(e); }
+      });
+    }
+    renderVolta(1, 'v1body', 'v1count');
+    renderVolta(2, 'v2body', 'v2count');
+  }
+
+  // ===== RENDER: TORNEIOS ABERTOS (individual entry, no fixed opponent) ========
+  const REGION_LABELS = { acores: 'Açores', madeira: 'Madeira', continente: 'Continente' };
+
+  function tournamentRowHtml(t, next) {
+    const isNext = !!(next && t === next);
+    const isPast = t.end < TODAY;
+    return `
+      <tr class="${isNext ? 'next-row' : ''}">
+        <td data-label="Torneio"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}</td>
+        <td data-label="Pavilhão" class="tournament-venue">${t.venue}</td>
+        <td data-label="Localidade">${t.city}</td>
+        <td data-label="Região"><span class="comp-badge">${REGION_LABELS[t.region] || t.region}</span></td>
+        <td data-label="Pontuação"><span class="comp-badge">${t.points}</span></td>
+        <td data-label="Categorias">${t.categories.join(', ')}</td>
+        <td data-label="Início" class="date-cell">${fmtDate(t.start)}</td>
+        <td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>
+        <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}</td>
+      </tr>`;
+  }
+
+  function buildTournamentTable(list, next) {
+    if (!list.length) {
+      return `<table><tbody>${emptyRow(9, 0)}</tbody></table>`;
+    }
+    const rows = list.map(t => {
+      try { return tournamentRowHtml(t, next); }
+      catch (e) { showFatalError(e); return ''; }
+    }).join('');
+    return `
+      <table>
+        <thead><tr><th>Torneio</th><th>Pavilhão</th><th>Localidade</th><th>Região</th><th>Pontuação</th><th>Categorias</th><th>Início</th><th>Fim</th><th>Estado</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function renderTournaments() {
+    document.getElementById('combinedContainer').style.display = 'none';
+    document.getElementById('singleCompContainer').style.display = 'none';
+    document.getElementById('tournamentsContainer').style.display = '';
+    document.getElementById('compSubtitle').textContent = 'Torneios Abertos FPTM · 2026/2027';
+
+    const items = TOURNAMENTS.slice().sort((a,b) => a.start.localeCompare(b.start));
+    const next = items.find(t => t.end >= TODAY) || null;
+    const pastCount = items.filter(t => t.end < TODAY).length;
+    const upcomingCount = items.length - pastCount;
+
+    const kpiRow = document.getElementById('kpiRow');
+    kpiRow.innerHTML = '';
+    const kpis = [
+      { label: 'Próximo torneio', value: next ? fmtDate(next.start) : '—', sub: next ? `${next.name}` : 'Sem torneios agendados', highlight: true },
+      { label: 'Torneios totais', value: String(items.length), sub: 'Todas as categorias' },
+      { label: 'Por realizar', value: String(upcomingCount), sub: 'A partir de hoje' },
+      { label: 'Já realizados', value: String(pastCount), sub: 'Datas já passadas' },
+    ];
+    kpis.forEach(k => {
+      const div = document.createElement('div');
+      div.className = 'kpi' + (k.highlight ? ' highlight' : '');
+      div.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div><div class="sub">${k.sub}</div>`;
+      kpiRow.appendChild(div);
+    });
+
+    document.querySelectorAll('#tournGroupToggle button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === tournamentGroupMode);
+    });
+
+    const body = document.getElementById('tournBody');
+
+    if (tournamentGroupMode === 'categoria') {
+      // Grouping by category replaces the single-category filter — estado/região still apply.
+      const base = items.filter(t => {
+        const isPast = t.end < TODAY;
+        if (filters.estado === 'pending' && isPast) return false;
+        if (filters.estado === 'played' && !isPast) return false;
+        if (filters.regiao !== 'all' && t.region !== filters.regiao) return false;
+        if (filters.pontuacao !== 'all' && String(t.points) !== filters.pontuacao) return false;
+        return true;
+      });
+      document.getElementById('tournCount').textContent = `${base.length} de ${items.length} torneios · agrupados por categoria`;
+      body.innerHTML = '';
+      CATEGORY_ORDER.forEach(cat => {
+        const list = base.filter(t => t.categories.includes(cat)).sort((a,b) => a.start.localeCompare(b.start));
+        const group = document.createElement('div');
+        group.className = 'category-group';
+        group.innerHTML = `<div class="category-group-title"><span>${cat}</span><span class="count">${list.length} torneio${list.length === 1 ? '' : 's'}</span></div>` + buildTournamentTable(list, next);
+        body.appendChild(group);
+      });
+    } else {
+      const filtered = items.filter(t => {
+        const isPast = t.end < TODAY;
+        if (filters.estado === 'pending' && isPast) return false;
+        if (filters.estado === 'played' && !isPast) return false;
+        if (filters.regiao !== 'all' && t.region !== filters.regiao) return false;
+        if (filters.categoria !== 'all' && !t.categories.includes(filters.categoria)) return false;
+        if (filters.pontuacao !== 'all' && String(t.points) !== filters.pontuacao) return false;
+        return true;
+      });
+      document.getElementById('tournCount').textContent = `${filtered.length} de ${items.length} torneios`;
+      body.innerHTML = buildTournamentTable(filtered, next);
+    }
+  }
+
+  // ===== FILTER BAR VISIBILITY (some filters don't apply to Torneios Abertos) ==
+  function updateFilterBarVisibility() {
+    const isTournaments = activeCompId === 'torneios';
+    ['fVolta', 'fLocal', 'fResultado'].forEach(id => {
+      const group = document.getElementById(id).closest('.filter-group');
+      group.style.display = isTournaments ? 'none' : '';
+    });
+    document.getElementById('fRegiao').closest('.filter-group').style.display = isTournaments ? '' : 'none';
+    document.getElementById('fPontuacao').closest('.filter-group').style.display = isTournaments ? '' : 'none';
+    const showCategoriaFilter = isTournaments && tournamentGroupMode !== 'categoria';
+    document.getElementById('fCategoria').closest('.filter-group').style.display = showCategoriaFilter ? '' : 'none';
+  }
+
+  // ===== RENDER: EVERYTHING ====================================================
+  function renderAll() {
+    try {
+      renderTabs();
+      updateFilterBarVisibility();
+      if (activeCompId === 'all') {
+        renderCombined();
+      } else if (activeCompId === 'torneios') {
+        renderTournaments();
+      } else {
+        renderSingle(currentCompetition());
+      }
+    } catch (e) {
+      showFatalError(e);
+    }
+  }
+
+  // ===== FILTER WIRING ========================================================
+  document.getElementById('fVolta').addEventListener('change', e => { filters.volta = e.target.value; renderAll(); });
+  document.getElementById('fLocal').addEventListener('change', e => { filters.local = e.target.value; renderAll(); });
+  document.getElementById('fEstado').addEventListener('change', e => { filters.estado = e.target.value; renderAll(); });
+  document.getElementById('fResultado').addEventListener('change', e => { filters.resultado = e.target.value; renderAll(); });
+  document.getElementById('fRegiao').addEventListener('change', e => { filters.regiao = e.target.value; renderAll(); });
+  document.getElementById('fCategoria').addEventListener('change', e => { filters.categoria = e.target.value; renderAll(); });
+  document.getElementById('fPontuacao').addEventListener('change', e => { filters.pontuacao = e.target.value; renderAll(); });
+  document.getElementById('tournGroupToggle').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    tournamentGroupMode = btn.dataset.mode;
+    renderAll();
+  });
+  document.getElementById('resetFilters').addEventListener('click', () => {
+    filters.volta = 'all'; filters.local = 'all'; filters.estado = 'all'; filters.resultado = 'all'; filters.regiao = 'all'; filters.categoria = 'all'; filters.pontuacao = 'all';
+    document.getElementById('fVolta').value = 'all';
+    document.getElementById('fLocal').value = 'all';
+    document.getElementById('fEstado').value = 'all';
+    document.getElementById('fResultado').value = 'all';
+    document.getElementById('fRegiao').value = 'all';
+    document.getElementById('fCategoria').value = 'all';
+    document.getElementById('fPontuacao').value = 'all';
+    renderAll();
+  });
+
+  // ===== EXPORT / IMPORT RESULTS ==============================================
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify({ results }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'resultados-ala-gondomar.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+  });
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (parsed && parsed.results) {
+          Object.assign(results, parsed.results);
+        } else {
+          // Formato antigo: ficheiro só com resultados, sem envelope.
+          Object.assign(results, parsed);
+        }
+        persistState();
+        renderAll();
+      } catch (err) {
+        alert('Não foi possível ler este ficheiro de resultados.');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // ===== THEME TOGGLE ==========================================================
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+  });
+
+  loadPersistedState();
+  renderAll();
+</script>
+</body>
+</html>
