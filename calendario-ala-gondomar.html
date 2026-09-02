@@ -394,25 +394,6 @@
   .result-badge.loss { color: var(--status-critical); background: color-mix(in srgb, var(--status-critical) 15%, transparent); }
   .result-badge.draw { color: var(--status-neutral); background: color-mix(in srgb, var(--status-neutral) 18%, transparent); }
 
-  .athlete-notes {
-    font-family: inherit;
-    font-size: 12.5px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    color: var(--text-primary);
-    width: 100%;
-    min-width: 160px;
-    max-width: 220px;
-    min-height: 56px;
-    resize: vertical;
-    box-sizing: border-box;
-    line-height: 1.4;
-  }
-  .athlete-notes::placeholder { color: var(--text-muted); }
-  .athlete-notes:focus { outline: 2px solid var(--series-1); outline-offset: 1px; }
-
   .empty-state {
     padding: 40px 20px;
     text-align: center;
@@ -595,7 +576,6 @@
     <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente. Os resultados ficam guardados automaticamente neste telemóvel/computador e neste navegador. Usa <em>Exportar resultados</em> para criar um ficheiro de cópia de segurança ou para os levar para outro dispositivo, e <em>Importar resultados</em> para os repor a partir desse ficheiro.
     <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
     <br><strong>Todos os Jogos + Torneios na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa e os torneios abertos. Um jogo marcado para o mesmo dia de um torneio fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
-    <br><strong>Atletas inscritos (experimental):</strong> em cada torneio aberto tens uma caixa de texto livre para escreveres os atletas do clube que vão participar e a respetiva categoria, sem limite (ex: "Mariana Pinto - Sub15; João - Sub19"). Fica guardado automaticamente neste dispositivo (e incluído no Exportar/Importar resultados).
     <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
   </div>
 
@@ -720,10 +700,6 @@
   // ===== STATE ===============================================================
   // Manually entered results, keyed by `${competitionId}|${encontro}` -> {ours, theirs}
   const results = {};
-  // Atletas inscritos por torneio aberto (experimental), keyed by nome do torneio
-  // -> array de { name, category }, sem limite de entradas.
-  const tournamentEntries = {};
-  function tournamentKey(t) { return t.name; }
 
   // ===== LOCAL PERSISTENCE ====================================================
   // This page runs as its own website (not inside a Claude artifact sandbox),
@@ -737,12 +713,11 @@
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (parsed && parsed.results) Object.assign(results, parsed.results);
-      if (parsed && parsed.tournamentEntries) Object.assign(tournamentEntries, parsed.tournamentEntries);
     } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
   }
   function persistState() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, tournamentEntries }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results }));
     } catch (e) { /* ignora — continua a funcionar só sem guardar automaticamente */ }
   }
 
@@ -895,10 +870,10 @@
     tr.innerHTML = `
       <td data-label="Data" class="date-cell">${rangeLabel}</td>
       <td data-label="Competição"><span class="comp-badge tourn-badge">🏆 Torneio</span></td>
-      <td data-label="Jornada"><span class="jornada-combined">${t.categories.join(', ')}</span></td>
+      <td data-label="Jornada"><span class="jornada-combined">${t.name}</span></td>
       <td data-label="Nº Encontro">—</td>
       <td data-label="Local">${t.city}</td>
-      <td data-label="Adversário"><strong>${t.name}</strong></td>
+      <td data-label="Adversário"><strong>${t.categories.join(', ')}</strong></td>
       <td data-label="Horário"><span class="comp-badge">${REGION_LABELS[t.region] || t.region}</span></td>
       <td data-label="Nosso resultado">—</td>`;
     return tr;
@@ -1085,40 +1060,7 @@
   // ===== RENDER: TORNEIOS ABERTOS (individual entry, no fixed opponent) ========
   const REGION_LABELS = { acores: 'Açores', madeira: 'Madeira', continente: 'Continente' };
 
-  // Opção "caixa de texto livre": uma única nota por torneio, em vez de uma
-  // lista estruturada de entradas — o utilizador escreve nomes e categorias
-  // como quiser (ex: "Mariana Pinto - Sub15; João - Sub19").
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-  function tournamentNotesValue(t) {
-    const raw = tournamentEntries[tournamentKey(t)];
-    if (Array.isArray(raw)) {
-      // Migra dados do formato anterior (lista de {name, category}) para texto legível.
-      return raw.map(e => [e && e.name, e && e.category].filter(Boolean).join(' - ')).filter(Boolean).join('; ');
-    }
-    return raw || '';
-  }
-
-  function athleteCellHtml(t, idx) {
-    return `<td data-label="Atletas inscritos"><textarea class="athlete-notes" data-tourn-idx="${idx}" rows="3" placeholder="Nome - Categoria; Nome - Categoria">${escapeHtml(tournamentNotesValue(t))}</textarea></td>`;
-  }
-
-  function wireTournamentEntryInputs(root) {
-    root.querySelectorAll('.athlete-notes[data-tourn-idx]').forEach(ta => {
-      const idx = Number(ta.dataset.tournIdx);
-      const t = TOURNAMENTS[idx];
-      if (!t) return;
-      ta.addEventListener('change', () => {
-        const key = tournamentKey(t);
-        if (ta.value.trim() === '') delete tournamentEntries[key];
-        else tournamentEntries[key] = ta.value;
-        persistState();
-      });
-    });
-  }
-
-  function tournamentRowHtml(t, next, idx) {
+  function tournamentRowHtml(t, next) {
     const isNext = !!(next && t === next);
     const isPast = t.end < TODAY;
     return `
@@ -1132,21 +1074,20 @@
         <td data-label="Início" class="date-cell">${fmtDate(t.start)}</td>
         <td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>
         <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}</td>
-        ${athleteCellHtml(t, idx)}
       </tr>`;
   }
 
   function buildTournamentTable(list, next) {
     if (!list.length) {
-      return `<table><tbody>${emptyRow(10, 0)}</tbody></table>`;
+      return `<table><tbody>${emptyRow(9, 0)}</tbody></table>`;
     }
     const rows = list.map(t => {
-      try { return tournamentRowHtml(t, next, TOURNAMENTS.indexOf(t)); }
+      try { return tournamentRowHtml(t, next); }
       catch (e) { showFatalError(e); return ''; }
     }).join('');
     return `
       <table>
-        <thead><tr><th>Torneio</th><th>Pavilhão</th><th>Localidade</th><th>Região</th><th>Pontuação</th><th>Categorias</th><th>Início</th><th>Fim</th><th>Estado</th><th>Atletas inscritos</th></tr></thead>
+        <thead><tr><th>Torneio</th><th>Pavilhão</th><th>Localidade</th><th>Região</th><th>Pontuação</th><th>Categorias</th><th>Início</th><th>Fim</th><th>Estado</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
   }
@@ -1202,7 +1143,6 @@
         group.innerHTML = `<div class="category-group-title"><span>${cat}</span><span class="count">${list.length} torneio${list.length === 1 ? '' : 's'}</span></div>` + buildTournamentTable(list, next);
         body.appendChild(group);
       });
-      wireTournamentEntryInputs(body);
     } else {
       const filtered = items.filter(t => {
         const isPast = t.end < TODAY;
@@ -1215,7 +1155,6 @@
       });
       document.getElementById('tournCount').textContent = `${filtered.length} de ${items.length} torneios`;
       body.innerHTML = buildTournamentTable(filtered, next);
-      wireTournamentEntryInputs(body);
     }
   }
 
@@ -1277,7 +1216,7 @@
 
   // ===== EXPORT / IMPORT RESULTS ==============================================
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ results, tournamentEntries }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ results }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1297,9 +1236,8 @@
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result);
-        if (parsed && (parsed.results || parsed.tournamentEntries)) {
-          if (parsed.results) Object.assign(results, parsed.results);
-          if (parsed.tournamentEntries) Object.assign(tournamentEntries, parsed.tournamentEntries);
+        if (parsed && parsed.results) {
+          Object.assign(results, parsed.results);
         } else {
           // Formato antigo: ficheiro só com resultados, sem envelope.
           Object.assign(results, parsed);
