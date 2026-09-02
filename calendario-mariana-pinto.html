@@ -573,6 +573,12 @@
     <div id="tournBody"></div>
   </div>
 
+  <!-- Campeonatos Nacionais view: provas oficiais nacionais, sem local definido -->
+  <div class="volta" id="nacionaisContainer" style="display:none;">
+    <div class="volta-title"><span>Campeonatos Nacionais FPTM</span><span class="count" id="nacionaisCount"></span></div>
+    <div id="nacionaisBody"></div>
+  </div>
+
   <!-- Single-competition view: split by 1ª / 2ª volta -->
   <div id="singleCompContainer" style="display:none;">
     <div class="volta">
@@ -611,14 +617,19 @@
       <div class="volta-title"><span>🏓 Torneios Selecionados</span><span class="count" id="marianaTournCount"></span></div>
       <div id="marianaTournBody"></div>
     </div>
+    <div class="volta">
+      <div class="volta-title"><span>🏓 Campeonatos Nacionais Selecionados</span><span class="count" id="marianaNacionaisCount"></span></div>
+      <div id="marianaNacionaisBody"></div>
+    </div>
   </div>
 
   <div class="footer-note">
     <strong>Como atualizar este dashboard:</strong> quando tiveres o calendário de outra competição ou torneio (Taça de Portugal, torneios distritais, etc.), envia o ficheiro na conversa com o Claude e é adicionada uma nova aba — e essa competição passa também a contar automaticamente na aba <em>Todos os Jogos</em>. As abas a tracejado ainda não têm dados carregados.
     <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente.
     <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
-    <br><strong>Todos os Jogos + Torneios na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa e os torneios abertos (com a caixa "Mariana" disponível ali também). Um jogo marcado para o mesmo dia de um torneio fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
-    <br><strong>Mariana:</strong> marca a caixa "Mariana" em qualquer jogo de equipa ou torneio para o adicionares à aba 🏓 Mariana — essa aba junta tudo o que estiver marcado, destacado a roxo.
+    <br><strong>Campeonatos Nacionais:</strong> lista os campeonatos nacionais oficiais da FPTM (CNI, CNE, CN Pares Jovens), com data e categorias — o local ainda não está definido pela federação. Tem também a caixa "Mariana".
+    <br><strong>Todos os Jogos + Torneios/Campeonatos na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa, os torneios abertos e os campeonatos nacionais (com a caixa "Mariana" disponível ali também). Um jogo marcado para o mesmo dia de um torneio ou campeonato fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
+    <br><strong>Mariana:</strong> marca a caixa "Mariana" em qualquer jogo de equipa, torneio ou campeonato nacional para o adicionares à aba 🏓 Mariana — essa aba junta tudo o que estiver marcado, destacado a roxo.
     <br><strong>Partilha entre dispositivos:</strong> os resultados e as marcações da Mariana são guardados automaticamente e partilhados entre todos os que abrem este link — quando alguém marca algo, aparece nos outros telemóveis/computadores ao fim de alguns segundos (ou de imediato ao clicar <em>🔄 Atualizar</em>). Usa <em>Exportar dados</em> para criar um ficheiro de cópia de segurança, e <em>Importar dados</em> para os repor a partir desse ficheiro.
     <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
   </div>
@@ -733,6 +744,18 @@
     { name: "IV Torneio Cidade de Leiria",                                  venue: "Pavilhão Municipal dos Pousos",                                city: "Leiria",                                  region: 'continente', points: 300, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2027-05-22', end: '2027-05-23' },
     { name: "LXIV Torneio Cidade de Lisboa",                                venue: "Pavilhão do CIR Laranjeiro",                                   city: "Laranjeiro, Almada",                     region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2027-06-05', end: '2027-06-06' },
     { name: "18º Torneio Internacional de Ténis de Mesa das Taipas",       venue: "Pavilhão Gimnodesportiva da E.B. 2,3 de Caldas das Taipas",    city: "Caldas das Taipas, Guimarães",           region: 'continente', points: 500, categories: ['Sub9','Sub11','Sub13','Sub15','Sub17','Sub19','Seniores'], start: '2027-06-26', end: '2027-06-27' },
+  ];
+
+  // Campeonatos Nacionais FPTM 2026/2027 — provas oficiais nacionais (não são
+  // torneios abertos de inscrição individual). Local ainda por definir pela
+  // federação, por isso ficam sem pavilhão/localidade/região/pontuação.
+  const CAMPEONATOS_NACIONAIS = [
+    { name: "CNI Seniores",                   categories: ['Seniores'],                     start: '2027-03-13', end: '2027-03-14' },
+    { name: "CNE Sub11, Sub15 e Sub19",       categories: ['Sub11','Sub15','Sub19'],        start: '2027-04-17', end: '2027-04-18' },
+    { name: "CNI Sub9, Sub13, Sub17 e Sub21", categories: ['Sub9','Sub13','Sub17','Sub21'], start: '2027-05-01', end: '2027-05-02' },
+    { name: "CN Pares Jovens",                 categories: [],                               start: '2027-05-15', end: '2027-05-16' },
+    { name: "CNE Sub9, Sub13, Sub17 e Sub21", categories: ['Sub9','Sub13','Sub17','Sub21'], start: '2027-05-29', end: '2027-05-30' },
+    { name: "CNI Sub11, Sub15 e Sub19",       categories: ['Sub11','Sub15','Sub19'],        start: '2027-06-05', end: '2027-06-06' },
   ];
 
   // Tabs shown as "por adicionar" — send the calendar file to fill any of these in.
@@ -901,16 +924,16 @@
   // Torneios não têm volta/local/resultado nem "jogado" — só entram na vista
   // "Todos os Jogos" quando nenhum desses filtros de jogos de equipa está ativo.
   function passesFilterEvent(e) {
-    if (e._kind === 'tournament') {
+    if (e._kind === 'tournament' || e._kind === 'nacional') {
       if (filters.volta !== 'all' || filters.local !== 'all' || filters.estado !== 'all' || filters.resultado !== 'all') return false;
       return true;
     }
     return passesFilter(e);
   }
-  // Torneios que decorrem numa dada data (início ou fim inclusive) — usado para
-  // assinalar jogos de equipa marcados para o mesmo dia de um torneio aberto.
+  // Torneios/campeonatos que decorrem numa dada data (início ou fim inclusive)
+  // — usado para assinalar jogos de equipa marcados para o mesmo dia.
   function tournamentsOnDate(dateIso) {
-    return TOURNAMENTS.filter(t => dateIso >= t.start && dateIso <= t.end);
+    return [...TOURNAMENTS, ...CAMPEONATOS_NACIONAIS].filter(t => dateIso >= t.start && dateIso <= t.end);
   }
   function emptyRow(colspan, totalAvailable) {
     return `<tr><td colspan="${colspan}"><div class="empty-state"><p>Sem jogos correspondentes${totalAvailable ? ' ao filtro aplicado' : ' — ainda não há dados carregados'}.</p></div></td></tr>`;
@@ -933,7 +956,7 @@
 
     const nextPill = isNext ? '<span class="next-pill">Próximo</span>' : '';
     const conflictBadge = conflictTourns.length
-      ? `<span class="conflict-badge" title="${escapeAttr('Torneio(s) na mesma data: ' + conflictTourns.map(t => t.name).join(' · '))}">🏆</span>`
+      ? `<span class="conflict-badge" title="${escapeAttr('Torneio(s)/Campeonato(s) na mesma data: ' + conflictTourns.map(t => t.name).join(' · '))}">🏆</span>`
       : '';
     const encontroCell = `<td data-label="Nº Encontro"><span class="encontro-num">${m.encontro}</span></td>`;
     const dateCell = `<td data-label="Data" class="date-cell">${fmtDate(m.date)}${conflictBadge}</td>`;
@@ -974,18 +997,22 @@
     const tr = document.createElement('tr');
     const key = tournamentKey(t);
     const marianaOn = !!marianaSelections[key];
+    const isNacional = t._kind === 'nacional';
     tr.className = ['tournament-combined-row', marianaOn ? 'mariana-row' : ''].filter(Boolean).join(' ');
     const rangeLabel = t.end !== t.start ? `${fmtDate(t.start)} – ${fmtDate(t.end)}` : fmtDate(t.start);
+    const badge = isNacional ? '🏅 Campeonato' : '🏆 Torneio';
+    const localCell = t.city || '—';
+    const regionCell = t.region ? (REGION_LABELS[t.region] || t.region) : '—';
     tr.innerHTML = `
       <td data-label="Data" class="date-cell">${rangeLabel}</td>
-      <td data-label="Competição"><span class="comp-badge tourn-badge">🏆 Torneio</span></td>
+      <td data-label="Competição"><span class="comp-badge tourn-badge">${badge}</span></td>
       <td data-label="Jornada"><span class="jornada-combined">${t.name}</span>${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
       <td data-label="Nº Encontro">—</td>
-      <td data-label="Local">${t.city}</td>
+      <td data-label="Local">${localCell}</td>
       <td data-label="Adversário"><strong>${t.categories.join(', ')}</strong></td>
-      <td data-label="Horário"><span class="comp-badge">${REGION_LABELS[t.region] || t.region}</span></td>
+      <td data-label="Horário"><span class="comp-badge">${regionCell}</span></td>
       <td data-label="Nosso resultado">—</td>
-      <td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" data-tourn-idx="${idx}" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>`;
+      <td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" data-tourn-key="${escapeAttr(key)}" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>`;
     return tr;
   }
 
@@ -1038,14 +1065,16 @@
     });
   }
 
-  // Wires "Mariana" checkboxes inside HTML-string-built tournament rows (they
-  // aren't created via document.createElement, so listeners attach after insertion).
+  // Wires "Mariana" checkboxes inside HTML-string-built tournament/campeonato
+  // rows (they aren't created via document.createElement, so listeners attach
+  // after insertion). Keyed by nome (data-tourn-key) em vez de índice, para
+  // funcionar tanto para TOURNAMENTS como para CAMPEONATOS_NACIONAIS sem
+  // ambiguidade sobre a que lista o índice pertence.
   function wireTournamentCheckboxes(root) {
-    root.querySelectorAll('.mariana-checkbox[data-tourn-idx]').forEach(cb => {
+    root.querySelectorAll('.mariana-checkbox[data-tourn-key]').forEach(cb => {
       cb.addEventListener('change', () => {
-        const t = TOURNAMENTS[Number(cb.dataset.tournIdx)];
-        if (!t) return;
-        const key = tournamentKey(t);
+        const key = cb.dataset.tournKey;
+        if (!key) return;
         if (cb.checked) marianaSelections[key] = true; else delete marianaSelections[key];
         const tr = cb.closest('tr');
         if (tr) tr.classList.toggle('mariana-row', cb.checked);
@@ -1118,6 +1147,14 @@
     tournBtn.addEventListener('click', () => { activeCompId = 'torneios'; renderAll(); });
     tabRow.appendChild(tournBtn);
 
+    const nacBtn = document.createElement('button');
+    nacBtn.className = 'tab';
+    nacBtn.setAttribute('role', 'tab');
+    nacBtn.setAttribute('aria-selected', String(activeCompId === 'nacionais'));
+    nacBtn.textContent = '🏅 Campeonatos Nacionais';
+    nacBtn.addEventListener('click', () => { activeCompId = 'nacionais'; renderAll(); });
+    tabRow.appendChild(nacBtn);
+
     const marianaBtn = document.createElement('button');
     marianaBtn.className = 'tab';
     marianaBtn.setAttribute('role', 'tab');
@@ -1141,8 +1178,10 @@
   function renderCombined() {
     document.getElementById('combinedContainer').style.display = '';
     document.getElementById('singleCompContainer').style.display = 'none';
+    document.getElementById('tournamentsContainer').style.display = 'none';
+    document.getElementById('nacionaisContainer').style.display = 'none';
     const compNames = COMPETITIONS.map(c => c.shortLabel).join(' + ');
-    document.getElementById('compSubtitle').textContent = `Todas as competições e Torneios Abertos carregados (${compNames} + Torneios) · 2026/2027`;
+    document.getElementById('compSubtitle').textContent = `Todas as competições, Torneios Abertos e Campeonatos Nacionais carregados (${compNames} + Torneios + CN) · 2026/2027`;
 
     const matches = allAugmentedMatches().sort((a,b) => a.date.localeCompare(b.date));
     currentScopeMatches = matches;
@@ -1150,16 +1189,18 @@
 
     renderKpis(matches, nextMatch, `${COMPETITIONS.length} competições carregadas`, 'Jogos totais');
 
-    // Junta jogos de equipa e torneios abertos numa só lista ordenada por data,
-    // para se ver de imediato se algum jogo calha no mesmo dia de um torneio
-    // (jogos nessa situação ficam com o selo 🏆 e destacados a laranja).
+    // Junta jogos de equipa, torneios abertos e campeonatos nacionais numa só
+    // lista ordenada por data, para se ver de imediato se algum jogo calha no
+    // mesmo dia de um torneio/campeonato (jogos nessa situação ficam com o
+    // selo 🏆 e destacados a laranja).
     const events = [
       ...matches.map(m => ({ ...m, _kind: 'match' })),
       ...TOURNAMENTS.map((t, i) => ({ ...t, _kind: 'tournament', date: t.start, _idx: i })),
+      ...CAMPEONATOS_NACIONAIS.map((t, i) => ({ ...t, _kind: 'nacional', date: t.start, _idx: i })),
     ].sort((a, b) => a.date.localeCompare(b.date));
 
     const rows = events.filter(passesFilterEvent);
-    document.getElementById('allCount').textContent = `${rows.length} de ${events.length} eventos (jogos + torneios)`;
+    document.getElementById('allCount').textContent = `${rows.length} de ${events.length} eventos (jogos + torneios + campeonatos)`;
     const body = document.getElementById('allBody');
     body.innerHTML = '';
     if (!rows.length) {
@@ -1167,7 +1208,7 @@
       return;
     }
     rows.forEach(e => {
-      try { body.appendChild(e._kind === 'tournament' ? makeTournamentCombinedRow(e, e._idx) : makeRow(e, nextMatch, { combined: true })); }
+      try { body.appendChild((e._kind === 'tournament' || e._kind === 'nacional') ? makeTournamentCombinedRow(e, e._idx) : makeRow(e, nextMatch, { combined: true })); }
       catch (err) { showFatalError(err); }
     });
     wireTournamentCheckboxes(body);
@@ -1177,6 +1218,8 @@
   function renderSingle(competition) {
     document.getElementById('combinedContainer').style.display = 'none';
     document.getElementById('singleCompContainer').style.display = '';
+    document.getElementById('tournamentsContainer').style.display = 'none';
+    document.getElementById('nacionaisContainer').style.display = 'none';
     document.getElementById('compSubtitle').textContent = competition.subtitle;
 
     const matches = buildAugmentedMatches(competition).sort((a,b) => a.date.localeCompare(b.date));
@@ -1212,7 +1255,6 @@
     const isPast = t.end < TODAY;
     const key = tournamentKey(t);
     const marianaOn = !!marianaSelections[key];
-    const idx = TOURNAMENTS.indexOf(t);
     return `
       <tr class="${isNext ? 'next-row' : ''}${marianaOn ? ' mariana-row' : ''}">
         <td data-label="Torneio"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
@@ -1224,7 +1266,7 @@
         <td data-label="Início" class="date-cell">${fmtDate(t.start)}</td>
         <td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>
         <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}</td>
-        <td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" data-tourn-idx="${idx}" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>
+        <td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" data-tourn-key="${escapeAttr(key)}" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>
       </tr>`;
   }
 
@@ -1247,6 +1289,7 @@
     document.getElementById('combinedContainer').style.display = 'none';
     document.getElementById('singleCompContainer').style.display = 'none';
     document.getElementById('tournamentsContainer').style.display = '';
+    document.getElementById('nacionaisContainer').style.display = 'none';
     document.getElementById('compSubtitle').textContent = 'Torneios Abertos FPTM · 2026/2027';
 
     const items = TOURNAMENTS.slice().sort((a,b) => a.start.localeCompare(b.start));
@@ -1310,11 +1353,84 @@
     wireTournamentCheckboxes(body);
   }
 
+  // ===== RENDER: CAMPEONATOS NACIONAIS (provas oficiais, sem local definido) ===
+  function nacionalRowHtml(t, next) {
+    const isNext = !!(next && t === next);
+    const isPast = t.end < TODAY;
+    const key = tournamentKey(t);
+    const marianaOn = !!marianaSelections[key];
+    return `
+      <tr class="${isNext ? 'next-row' : ''}${marianaOn ? ' mariana-row' : ''}">
+        <td data-label="Campeonato"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
+        <td data-label="Categorias">${t.categories.join(', ')}</td>
+        <td data-label="Início" class="date-cell">${fmtDate(t.start)}</td>
+        <td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>
+        <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}</td>
+        <td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" data-tourn-key="${escapeAttr(key)}" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>
+      </tr>`;
+  }
+
+  function buildNacionalTable(list, next) {
+    if (!list.length) {
+      return `<table><tbody>${emptyRow(6, 0)}</tbody></table>`;
+    }
+    const rows = list.map(t => {
+      try { return nacionalRowHtml(t, next); }
+      catch (e) { showFatalError(e); return ''; }
+    }).join('');
+    return `
+      <table>
+        <thead><tr><th>Campeonato</th><th>Categorias</th><th>Início</th><th>Fim</th><th>Estado</th><th>Mariana</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function renderNacionais() {
+    document.getElementById('combinedContainer').style.display = 'none';
+    document.getElementById('singleCompContainer').style.display = 'none';
+    document.getElementById('tournamentsContainer').style.display = 'none';
+    document.getElementById('nacionaisContainer').style.display = '';
+    document.getElementById('compSubtitle').textContent = 'Campeonatos Nacionais FPTM · 2026/2027 (local por definir)';
+
+    const items = CAMPEONATOS_NACIONAIS.slice().sort((a,b) => a.start.localeCompare(b.start));
+    const next = items.find(t => t.end >= TODAY) || null;
+    const pastCount = items.filter(t => t.end < TODAY).length;
+    const upcomingCount = items.length - pastCount;
+
+    const kpiRow = document.getElementById('kpiRow');
+    kpiRow.innerHTML = '';
+    const kpis = [
+      { label: 'Próximo campeonato', value: next ? fmtDate(next.start) : '—', sub: next ? `${next.name}` : 'Sem campeonatos agendados', highlight: true },
+      { label: 'Campeonatos totais', value: String(items.length), sub: 'Todas as categorias' },
+      { label: 'Por realizar', value: String(upcomingCount), sub: 'A partir de hoje' },
+      { label: 'Já realizados', value: String(pastCount), sub: 'Datas já passadas' },
+    ];
+    kpis.forEach(k => {
+      const div = document.createElement('div');
+      div.className = 'kpi' + (k.highlight ? ' highlight' : '');
+      div.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div><div class="sub">${k.sub}</div>`;
+      kpiRow.appendChild(div);
+    });
+
+    const filtered = items.filter(t => {
+      const isPast = t.end < TODAY;
+      if (filters.estado === 'pending' && isPast) return false;
+      if (filters.estado === 'played' && !isPast) return false;
+      if (filters.categoria !== 'all' && !t.categories.includes(filters.categoria)) return false;
+      return true;
+    });
+    document.getElementById('nacionaisCount').textContent = `${filtered.length} de ${items.length} campeonatos`;
+    const body = document.getElementById('nacionaisBody');
+    body.innerHTML = buildNacionalTable(filtered, next);
+    wireTournamentCheckboxes(body);
+  }
+
   // ===== RENDER: MARIANA (curated selection of matches + tournaments) ========
   function renderMariana() {
     document.getElementById('combinedContainer').style.display = 'none';
     document.getElementById('singleCompContainer').style.display = 'none';
     document.getElementById('tournamentsContainer').style.display = 'none';
+    document.getElementById('nacionaisContainer').style.display = 'none';
     document.getElementById('marianaContainer').style.display = '';
     document.getElementById('compSubtitle').textContent = 'Provas selecionadas para a Mariana jogar';
 
@@ -1324,14 +1440,19 @@
     const selectedTournaments = TOURNAMENTS
       .filter(t => marianaSelections[tournamentKey(t)])
       .sort((a,b) => a.start.localeCompare(b.start));
+    const selectedNacionais = CAMPEONATOS_NACIONAIS
+      .filter(t => marianaSelections[tournamentKey(t)])
+      .sort((a,b) => a.start.localeCompare(b.start));
 
     currentScopeMatches = selectedMatches;
     const nextMatch = selectedMatches.find(m => m.date >= TODAY) || null;
     const nextTourn = selectedTournaments.find(t => t.end >= TODAY) || null;
+    const nextNacional = selectedNacionais.find(t => t.end >= TODAY) || null;
 
     const upcomingEvents = [
       ...selectedMatches.map(m => ({ date: m.date, label: `${m.home ? 'vs (casa)' : '@ (fora)'} ${m.opponent}`, kind: 'Jogo' })),
       ...selectedTournaments.map(t => ({ date: t.start, label: t.name, kind: 'Torneio' })),
+      ...selectedNacionais.map(t => ({ date: t.start, label: t.name, kind: 'Campeonato' })),
     ].filter(e => e.date >= TODAY).sort((a,b) => a.date.localeCompare(b.date));
     const next = upcomingEvents[0] || null;
 
@@ -1340,8 +1461,8 @@
     const kpis = [
       { label: 'Próxima prova', value: next ? fmtDate(next.date) : '—', sub: next ? `${next.kind} · ${next.label}` : 'Nada selecionado ainda', highlight: true },
       { label: 'Jogos de equipa', value: String(selectedMatches.length), sub: 'Selecionados para a Mariana' },
-      { label: 'Torneios', value: String(selectedTournaments.length), sub: 'Selecionados para a Mariana' },
-      { label: 'Total selecionado', value: String(selectedMatches.length + selectedTournaments.length), sub: 'Provas no total' },
+      { label: 'Torneios + Campeonatos', value: String(selectedTournaments.length + selectedNacionais.length), sub: 'Selecionados para a Mariana' },
+      { label: 'Total selecionado', value: String(selectedMatches.length + selectedTournaments.length + selectedNacionais.length), sub: 'Provas no total' },
     ];
     kpis.forEach(k => {
       const div = document.createElement('div');
@@ -1370,6 +1491,15 @@
       tournBody2.innerHTML = buildTournamentTable(selectedTournaments, nextTourn);
       wireTournamentCheckboxes(tournBody2);
     }
+
+    document.getElementById('marianaNacionaisCount').textContent = `${selectedNacionais.length} campeonatos selecionados`;
+    const nacBody2 = document.getElementById('marianaNacionaisBody');
+    if (!selectedNacionais.length) {
+      nacBody2.innerHTML = '<table><tbody><tr><td colspan="6"><div class="empty-state"><p>Ainda não marcaste nenhum campeonato nacional para a Mariana — usa a caixa "Mariana" na aba Campeonatos Nacionais.</p></div></td></tr></tbody></table>';
+    } else {
+      nacBody2.innerHTML = buildNacionalTable(selectedNacionais, nextNacional);
+      wireTournamentCheckboxes(nacBody2);
+    }
   }
 
   // ===== FILTER BAR VISIBILITY (some filters don't apply to Torneios Abertos / Mariana) ==
@@ -1378,13 +1508,14 @@
     if (activeCompId === 'mariana') { filterBar.style.display = 'none'; return; }
     filterBar.style.display = '';
     const isTournaments = activeCompId === 'torneios';
+    const isNacionais = activeCompId === 'nacionais';
     ['fVolta', 'fLocal', 'fResultado'].forEach(id => {
       const group = document.getElementById(id).closest('.filter-group');
-      group.style.display = isTournaments ? 'none' : '';
+      group.style.display = (isTournaments || isNacionais) ? 'none' : '';
     });
     document.getElementById('fRegiao').closest('.filter-group').style.display = isTournaments ? '' : 'none';
     document.getElementById('fPontuacao').closest('.filter-group').style.display = isTournaments ? '' : 'none';
-    const showCategoriaFilter = isTournaments && tournamentGroupMode !== 'categoria';
+    const showCategoriaFilter = (isTournaments && tournamentGroupMode !== 'categoria') || isNacionais;
     document.getElementById('fCategoria').closest('.filter-group').style.display = showCategoriaFilter ? '' : 'none';
   }
 
@@ -1397,6 +1528,8 @@
         renderCombined();
       } else if (activeCompId === 'torneios') {
         renderTournaments();
+      } else if (activeCompId === 'nacionais') {
+        renderNacionais();
       } else if (activeCompId === 'mariana') {
         renderMariana();
       } else {
