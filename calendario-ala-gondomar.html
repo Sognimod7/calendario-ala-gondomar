@@ -234,7 +234,7 @@
     justify-content: space-between;
   }
   .volta-title .count { font-size: 12px; font-weight: 400; color: var(--text-muted); }
-  #tournBody { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #tournBody, #nacionaisBody, .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   .group-toggle { display: flex; gap: 4px; }
   .group-toggle button {
@@ -394,6 +394,45 @@
   .result-badge.loss { color: var(--status-critical); background: color-mix(in srgb, var(--status-critical) 15%, transparent); }
   .result-badge.draw { color: var(--status-neutral); background: color-mix(in srgb, var(--status-neutral) 18%, transparent); }
 
+  .edit-input {
+    width: 100%;
+    min-width: 92px;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-primary);
+  }
+  .edit-input:focus { outline: 2px solid var(--series-1); outline-offset: 1px; }
+  select.edit-input { cursor: pointer; }
+  input[type="text"].edit-input { min-width: 130px; }
+  .date-cell input.edit-input { display: block; margin-bottom: 3px; width: 140px; }
+  .date-cell .edit-reset-btn { display: inline-block; margin-left: 0; margin-top: 2px; }
+  .edit-reset-btn {
+    margin-left: 6px;
+    font-size: 11px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .edit-reset-btn:hover { color: var(--text-primary); }
+  tbody tr.match-edited td.date-cell { box-shadow: inset 3px 0 0 var(--series-2); }
+  #editModeBanner {
+    background: color-mix(in srgb, var(--series-2) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--series-2) 45%, transparent);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    font-size: 13px;
+  }
+  .btn.edit-active { background: var(--series-2); color: #fff; border-color: var(--series-2); }
+
   .empty-state {
     padding: 40px 20px;
     text-align: center;
@@ -444,9 +483,13 @@
         <button class="btn" id="importBtn" type="button">⬆ Importar resultados</button>
         <input type="file" id="importFile" accept="application/json" style="display:none">
       </div>
+      <button class="btn" id="syncBtn" type="button" title="Vai buscar as alterações mais recentes de quem partilhou este link">🔄 Atualizar</button>
+      <button class="btn" id="editModeBtn" type="button" title="Editar datas/horários/local/adversário dos jogos (pede password)">🔒 Editar jogos</button>
       <button class="btn" id="themeToggle" type="button">🌓 Tema</button>
     </div>
   </div>
+
+  <div id="editModeBanner" style="display:none;">✏️ Modo de edição ativo — muda data, horário, local ou adversário diretamente nas tabelas. As alterações ficam gravadas e visíveis para quem abrir este link.</div>
 
   <div class="tabs" role="tablist" id="tabRow"></div>
 
@@ -525,12 +568,14 @@
   <!-- Combined view: every competition merged into one chronological list -->
   <div class="volta" id="combinedContainer">
     <div class="volta-title"><span>Todos os Jogos</span><span class="count" id="allCount"></span></div>
-    <table>
-      <thead>
-        <tr><th>Data</th><th>Competição</th><th>Jornada</th><th>Nº Encontro</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
-      </thead>
-      <tbody id="allBody"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Competição</th><th>Jornada</th><th>Nº Encontro</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+        </thead>
+        <tbody id="allBody"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Torneios abertos view: individual open tournaments, not team fixtures -->
@@ -558,31 +603,37 @@
   <div id="singleCompContainer" style="display:none;">
     <div class="volta">
       <div class="volta-title"><span>1ª Volta</span><span class="count" id="v1count"></span></div>
-      <table>
-        <thead>
-          <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
-        </thead>
-        <tbody id="v1body"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+          </thead>
+          <tbody id="v1body"></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="volta">
       <div class="volta-title"><span>2ª Volta</span><span class="count" id="v2count"></span></div>
-      <table>
-        <thead>
-          <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
-        </thead>
-        <tbody id="v2body"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+          </thead>
+          <tbody id="v2body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <div class="footer-note">
     <strong>Como atualizar este dashboard:</strong> quando tiveres o calendário de outra competição ou torneio (Taça de Portugal, torneios distritais, etc.), envia o ficheiro na conversa com o Claude e é adicionada uma nova aba — e essa competição passa também a contar automaticamente na aba <em>Todos os Jogos</em>. As abas a tracejado ainda não têm dados carregados.
-    <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente. Os resultados ficam guardados automaticamente neste telemóvel/computador e neste navegador. Usa <em>Exportar resultados</em> para criar um ficheiro de cópia de segurança ou para os levar para outro dispositivo, e <em>Importar resultados</em> para os repor a partir desse ficheiro.
+    <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente.
+    <br><strong>Editar jogos:</strong> o botão <em>🔒 Editar jogos</em> no topo pede uma password — depois de introduzida corretamente, a data, o horário, o local (casa/fora) e o adversário de cada jogo ficam editáveis diretamente nas tabelas. As alterações ficam gravadas automaticamente e aparecem para quem abrir este link (ao fim de alguns segundos, ou de imediato ao clicar <em>🔄 Atualizar</em>). Usa "repor" junto à data para desfazer uma alteração e voltar ao valor original.
     <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
     <br><strong>Campeonatos Nacionais:</strong> lista os campeonatos nacionais oficiais da FPTM (CNI, CNE, CN Pares Jovens), com data e categorias — o local ainda não está definido pela federação.
     <br><strong>Todos os Jogos + Torneios/Campeonatos na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa, os torneios abertos e os campeonatos nacionais. Um jogo marcado para o mesmo dia de um torneio ou campeonato fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
+    <br><strong>Partilha entre dispositivos:</strong> os resultados e as edições de jogos são guardados automaticamente e partilhados entre todos os que abrem este link. Usa <em>Exportar resultados</em> para criar um ficheiro de cópia de segurança, e <em>Importar resultados</em> para os repor a partir desse ficheiro.
     <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
   </div>
 
@@ -719,25 +770,129 @@
   // ===== STATE ===============================================================
   // Manually entered results, keyed by `${competitionId}|${encontro}` -> {ours, theirs}
   const results = {};
+  // Edições manuais aos jogos (data/hora/local/adversário), keyed like `results`.
+  // Cada entrada é só os campos alterados, ex: { date: '2026-11-01' } — os
+  // restantes campos continuam a vir dos dados originais da competição.
+  const matchEdits = {};
+  // Edições manuais às datas dos torneios abertos e campeonatos nacionais,
+  // keyed pelo nome (tournamentKey). Ex: { start: '2027-03-13', end: '2027-03-14' }.
+  const tournamentEdits = {};
+  function tournamentKey(t) { return t.name; }
+  function effectiveTournament(t) {
+    const edit = tournamentEdits[tournamentKey(t)];
+    return edit ? { ...t, ...edit } : t;
+  }
+  function effectiveTournaments(list) { return list.map(effectiveTournament); }
 
-  // ===== LOCAL PERSISTENCE ====================================================
-  // This page runs as its own website (not inside a Claude artifact sandbox),
-  // so localStorage works normally here and keeps results across refreshes on
-  // this browser/device. Exportar/Importar resultados remains the way to move
-  // data between devices or keep an external backup.
-  const STORAGE_KEY = 'ala-gondomar-resultados-v1';
-  function loadPersistedState() {
+  // ===== SHARED PERSISTENCE (Firebase Realtime Database) ======================
+  // Esta página funciona como um site próprio (fora da sandbox de artifacts do
+  // Claude), por isso consegue falar com uma pequena base de dados na nuvem —
+  // toda a gente que abre este link lê/escreve o mesmo estado partilhado, em
+  // vez de cada dispositivo guardar só a sua própria cópia. O localStorage
+  // continua a servir de cache instantânea offline.
+  const FIREBASE_BASE = 'https://calendario-tm-mariana-default-rtdb.europe-west1.firebasedatabase.app';
+  const FIREBASE_PATH = 'clubeData';
+  const STORAGE_KEY = 'ala-gondomar-resultados-v2';
+
+  function loadLocalCache() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (parsed && parsed.results) Object.assign(results, parsed.results);
+      if (parsed && parsed.matchEdits) Object.assign(matchEdits, parsed.matchEdits);
+      if (parsed && parsed.tournamentEdits) Object.assign(tournamentEdits, parsed.tournamentEdits);
     } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
   }
-  function persistState() {
+  function saveLocalCache() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, matchEdits, tournamentEdits }));
     } catch (e) { /* ignora — continua a funcionar só sem guardar automaticamente */ }
+  }
+
+  // Guardado como STRING codificada em JSON (não um objeto aninhado) de propósito:
+  // nomes de adversários/torneios podem ter caracteres que o Firebase proíbe em
+  // chaves (ex: "/") — codificar tudo como uma só string evita esse problema.
+  async function fetchRemoteState() {
+    try {
+      const res = await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}.json`, { cache: 'no-store' });
+      if (!res.ok) return null;
+      const raw = await res.json();
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; /* offline ou base de dados ainda não configurada */ }
+  }
+  async function pushRemoteState() {
+    try {
+      const payload = JSON.stringify({ results, matchEdits, tournamentEdits });
+      await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (e) { /* fica só guardado localmente até à próxima ligação */ }
+  }
+
+  function persistState() {
+    saveLocalCache();
+    pushRemoteState();
+  }
+
+  // Vai buscar a cópia partilhada e torna-a autoritativa localmente também, para
+  // que todos convirjam para a mesma informação. Chamado no arranque, num
+  // temporizador, e pelo botão manual "🔄 Atualizar".
+  let syncing = false;
+  async function syncFromRemote(rerender) {
+    if (syncing) return;
+    syncing = true;
+    const remote = await fetchRemoteState();
+    if (remote) {
+      Object.keys(results).forEach(k => delete results[k]);
+      Object.keys(matchEdits).forEach(k => delete matchEdits[k]);
+      Object.keys(tournamentEdits).forEach(k => delete tournamentEdits[k]);
+      if (remote.results) Object.assign(results, remote.results);
+      if (remote.matchEdits) Object.assign(matchEdits, remote.matchEdits);
+      if (remote.tournamentEdits) Object.assign(tournamentEdits, remote.tournamentEdits);
+      saveLocalCache();
+      if (rerender) renderAll();
+    }
+    syncing = false;
+  }
+
+  // ===== EDIÇÃO DE JOGOS COM PASSWORD ==========================================
+  // Proteção simples do lado do cliente — evita edições acidentais/de visitantes
+  // casuais, mas não é segurança forte (o código fica visível a quem abrir as
+  // ferramentas de programador do browser).
+  function simpleHash(str) {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = hash | 0;
+    }
+    return hash >>> 0;
+  }
+  const EDIT_PASSWORD_HASH = 829771037; // hash da password de edição — não é texto simples
+  let editMode = false;
+  function toggleEditMode() {
+    if (editMode) {
+      editMode = false;
+      renderAll();
+      return;
+    }
+    const pass = prompt('Password de edição:');
+    if (pass === null) return;
+    if (simpleHash(pass) === EDIT_PASSWORD_HASH) {
+      editMode = true;
+      renderAll();
+    } else {
+      alert('Password incorreta.');
+    }
+  }
+  function updateEditModeUi() {
+    const btn = document.getElementById('editModeBtn');
+    const banner = document.getElementById('editModeBanner');
+    btn.textContent = editMode ? '🔓 Sair da edição' : '🔒 Editar jogos';
+    btn.classList.toggle('edit-active', editMode);
+    banner.style.display = editMode ? '' : 'none';
   }
 
   let activeCompId = 'all'; // 'all' = combined "Todos os Jogos" view
@@ -803,7 +958,10 @@
   }
   function currentCompetition() { return COMPETITIONS.find(c => c.id === activeCompId); }
   function buildAugmentedMatches(competition) {
-    return competition.matches.map(m => ({ ...m, _compId: competition.id, _compLabel: competition.shortLabel }));
+    return competition.matches.map(m => {
+      const edit = matchEdits[resultKey(competition.id, m.encontro)];
+      return { ...m, ...(edit || {}), _compId: competition.id, _compLabel: competition.shortLabel };
+    });
   }
   function allAugmentedMatches() {
     return COMPETITIONS.flatMap(buildAugmentedMatches);
@@ -831,7 +989,7 @@
   // Torneios que decorrem numa dada data (início ou fim inclusive) — usado para
   // assinalar jogos de equipa marcados para o mesmo dia de um torneio aberto.
   function tournamentsOnDate(dateIso) {
-    return [...TOURNAMENTS, ...CAMPEONATOS_NACIONAIS].filter(t => dateIso >= t.start && dateIso <= t.end);
+    return [...effectiveTournaments(TOURNAMENTS), ...effectiveTournaments(CAMPEONATOS_NACIONAIS)].filter(t => dateIso >= t.start && dateIso <= t.end);
   }
   function emptyRow(colspan, totalAvailable) {
     return `<tr><td colspan="${colspan}"><div class="empty-state"><p>Sem jogos correspondentes${totalAvailable ? ' ao filtro aplicado' : ' — ainda não há dados carregados'}.</p></div></td></tr>`;
@@ -851,11 +1009,22 @@
     const conflictBadge = conflictTourns.length
       ? `<span class="conflict-badge" title="${escapeAttr('Torneio(s)/Campeonato(s) na mesma data: ' + conflictTourns.map(t => t.name).join(' · '))}">🏆</span>`
       : '';
+    const hasEdit = !!matchEdits[key];
+    if (hasEdit) tr.className = (tr.className ? tr.className + ' ' : '') + 'match-edited';
     const encontroCell = `<td data-label="Nº Encontro"><span class="encontro-num">${m.encontro}</span></td>`;
-    const dateCell = `<td data-label="Data" class="date-cell">${fmtDate(m.date)}${conflictBadge}</td>`;
-    const localCell = `<td data-label="Local">${m.home ? '<span class="badge casa">🏠 Casa</span>' : '<span class="badge fora">✈️ Fora</span>'}</td>`;
-    const oppCell = `<td data-label="Adversário">${m.opponent}</td>`;
-    const timeCell = `<td data-label="Horário" class="time-cell">${m.time}</td>`;
+    let dateCell, localCell, oppCell, timeCell;
+    if (editMode) {
+      const resetBtn = hasEdit ? `<button type="button" class="edit-reset-btn" data-reset-key="${escapeAttr(key)}">repor</button>` : '';
+      dateCell = `<td data-label="Data" class="date-cell"><input type="date" class="edit-input edit-date-input" value="${m.date}">${resetBtn}</td>`;
+      localCell = `<td data-label="Local"><select class="edit-input edit-home-select"><option value="true"${m.home ? ' selected' : ''}>🏠 Casa</option><option value="false"${!m.home ? ' selected' : ''}>✈️ Fora</option></select></td>`;
+      oppCell = `<td data-label="Adversário"><input type="text" class="edit-input edit-opponent-input" value="${escapeAttr(m.opponent)}"></td>`;
+      timeCell = `<td data-label="Horário" class="time-cell"><input type="time" class="edit-input edit-time-input" value="${m.time}"></td>`;
+    } else {
+      dateCell = `<td data-label="Data" class="date-cell">${fmtDate(m.date)}${conflictBadge}</td>`;
+      localCell = `<td data-label="Local">${m.home ? '<span class="badge casa">🏠 Casa</span>' : '<span class="badge fora">✈️ Fora</span>'}</td>`;
+      oppCell = `<td data-label="Adversário">${m.opponent}</td>`;
+      timeCell = `<td data-label="Horário" class="time-cell">${m.time}</td>`;
+    }
     const resultCell = `<td data-label="Nosso resultado">
         <div class="result-cell">
           <input type="number" min="0" class="score-input ours-input" value="${r.ours ?? ''}" aria-label="Nosso resultado">
@@ -875,7 +1044,32 @@
     }
 
     wireResultInputs(tr, key);
+    if (editMode) wireEditInputs(tr, key);
     return tr;
+  }
+
+  // Grava alterações manuais a um jogo (data/hora/local/adversário) no overlay
+  // matchEdits, mantendo os dados originais da competição intactos.
+  function wireEditInputs(tr, key) {
+    function updateField(field, value) {
+      matchEdits[key] = { ...(matchEdits[key] || {}), [field]: value };
+      persistState();
+      renderAll();
+    }
+    const dateInput = tr.querySelector('.edit-date-input');
+    if (dateInput) dateInput.addEventListener('change', () => { if (dateInput.value) updateField('date', dateInput.value); });
+    const timeInput = tr.querySelector('.edit-time-input');
+    if (timeInput) timeInput.addEventListener('change', () => { if (timeInput.value) updateField('time', timeInput.value); });
+    const homeSelect = tr.querySelector('.edit-home-select');
+    if (homeSelect) homeSelect.addEventListener('change', () => updateField('home', homeSelect.value === 'true'));
+    const oppInput = tr.querySelector('.edit-opponent-input');
+    if (oppInput) oppInput.addEventListener('change', () => updateField('opponent', oppInput.value));
+    const resetBtn = tr.querySelector('.edit-reset-btn');
+    if (resetBtn) resetBtn.addEventListener('click', () => {
+      delete matchEdits[key];
+      persistState();
+      renderAll();
+    });
   }
 
   // Linha de um torneio aberto dentro da vista combinada "Todos os Jogos" —
@@ -886,12 +1080,26 @@
     const tr = document.createElement('tr');
     tr.className = 'tournament-combined-row';
     const isNacional = t._kind === 'nacional';
-    const rangeLabel = t.end !== t.start ? `${fmtDate(t.start)} – ${fmtDate(t.end)}` : fmtDate(t.start);
+    const key = tournamentKey(t);
+    const hasEdit = !!tournamentEdits[key];
+    if (hasEdit) tr.className += ' match-edited';
     const badge = isNacional ? '🏅 Campeonato' : '🏆 Torneio';
     const localCell = t.city || '—';
     const regionCell = t.region ? (REGION_LABELS[t.region] || t.region) : '—';
+    let dateCell;
+    if (editMode) {
+      const resetBtn = hasEdit ? `<button type="button" class="edit-reset-btn edit-tourn-reset" data-reset-key="${escapeAttr(key)}">repor</button>` : '';
+      dateCell = `<td data-label="Data" class="date-cell">
+        <input type="date" class="edit-input edit-tourn-start" value="${t.start}" aria-label="Início">
+        <input type="date" class="edit-input edit-tourn-end" value="${t.end}" aria-label="Fim">
+        ${resetBtn}
+      </td>`;
+    } else {
+      const rangeLabel = t.end !== t.start ? `${fmtDate(t.start)} – ${fmtDate(t.end)}` : fmtDate(t.start);
+      dateCell = `<td data-label="Data" class="date-cell">${rangeLabel}</td>`;
+    }
     tr.innerHTML = `
-      <td data-label="Data" class="date-cell">${rangeLabel}</td>
+      ${dateCell}
       <td data-label="Competição"><span class="comp-badge tourn-badge">${badge}</span></td>
       <td data-label="Jornada"><span class="jornada-combined">${t.name}</span></td>
       <td data-label="Nº Encontro">—</td>
@@ -899,7 +1107,28 @@
       <td data-label="Adversário"><strong>${t.categories.join(', ')}</strong></td>
       <td data-label="Horário"><span class="comp-badge">${regionCell}</span></td>
       <td data-label="Nosso resultado">—</td>`;
+    if (editMode) wireTournamentEditInputs(tr, key);
     return tr;
+  }
+
+  // Grava alterações manuais às datas de um torneio/campeonato no overlay
+  // tournamentEdits, mantendo os dados originais intactos.
+  function wireTournamentEditInputs(tr, key) {
+    function updateField(field, value) {
+      tournamentEdits[key] = { ...(tournamentEdits[key] || {}), [field]: value };
+      persistState();
+      renderAll();
+    }
+    const startInput = tr.querySelector('.edit-tourn-start');
+    if (startInput) startInput.addEventListener('change', () => { if (startInput.value) updateField('start', startInput.value); });
+    const endInput = tr.querySelector('.edit-tourn-end');
+    if (endInput) endInput.addEventListener('change', () => { if (endInput.value) updateField('end', endInput.value); });
+    const resetBtn = tr.querySelector('.edit-tourn-reset');
+    if (resetBtn) resetBtn.addEventListener('click', () => {
+      delete tournamentEdits[key];
+      persistState();
+      renderAll();
+    });
   }
 
   function wireResultInputs(tr, key) {
@@ -1043,8 +1272,8 @@
     // selo 🏆 e destacados a amarelo).
     const events = [
       ...matches.map(m => ({ ...m, _kind: 'match' })),
-      ...TOURNAMENTS.map(t => ({ ...t, _kind: 'tournament', date: t.start })),
-      ...CAMPEONATOS_NACIONAIS.map(t => ({ ...t, _kind: 'nacional', date: t.start })),
+      ...effectiveTournaments(TOURNAMENTS).map(t => ({ ...t, _kind: 'tournament', date: t.start })),
+      ...effectiveTournaments(CAMPEONATOS_NACIONAIS).map(t => ({ ...t, _kind: 'nacional', date: t.start })),
     ].sort((a, b) => a.date.localeCompare(b.date));
 
     const rows = events.filter(passesFilterEvent);
@@ -1100,18 +1329,51 @@
   function tournamentRowHtml(t, next) {
     const isNext = !!(next && t === next);
     const isPast = t.end < TODAY;
+    const key = tournamentKey(t);
+    const hasEdit = !!tournamentEdits[key];
+    let startCell, endCell;
+    if (editMode) {
+      const resetBtn = hasEdit ? `<button type="button" class="edit-reset-btn edit-tourn-reset" data-reset-key="${escapeAttr(key)}">repor</button>` : '';
+      startCell = `<td data-label="Início" class="date-cell"><input type="date" class="edit-input edit-tourn-start" data-tourn-key="${escapeAttr(key)}" value="${t.start}"></td>`;
+      endCell = `<td data-label="Fim" class="date-cell"><input type="date" class="edit-input edit-tourn-end" data-tourn-key="${escapeAttr(key)}" value="${t.end}">${resetBtn}</td>`;
+    } else {
+      startCell = `<td data-label="Início" class="date-cell">${fmtDate(t.start)}</td>`;
+      endCell = `<td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>`;
+    }
     return `
-      <tr class="${isNext ? 'next-row' : ''}">
+      <tr class="${isNext ? 'next-row' : ''}${hasEdit ? ' match-edited' : ''}">
         <td data-label="Torneio"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}</td>
         <td data-label="Pavilhão" class="tournament-venue">${t.venue}</td>
         <td data-label="Localidade">${t.city}</td>
         <td data-label="Região"><span class="comp-badge">${REGION_LABELS[t.region] || t.region}</span></td>
         <td data-label="Pontuação"><span class="comp-badge">${t.points}</span></td>
         <td data-label="Categorias">${t.categories.join(', ')}</td>
-        <td data-label="Início" class="date-cell">${fmtDate(t.start)}</td>
-        <td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>
+        ${startCell}
+        ${endCell}
         <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}</td>
       </tr>`;
+  }
+
+  // Wires editable "Início"/"Fim" date inputs (built as HTML strings, not via
+  // document.createElement) after they are inserted into the DOM.
+  function wireTournamentDateInputs(root) {
+    root.querySelectorAll('.edit-tourn-start[data-tourn-key], .edit-tourn-end[data-tourn-key]').forEach(input => {
+      const key = input.dataset.tournKey;
+      const field = input.classList.contains('edit-tourn-start') ? 'start' : 'end';
+      input.addEventListener('change', () => {
+        if (!input.value) return;
+        tournamentEdits[key] = { ...(tournamentEdits[key] || {}), [field]: input.value };
+        persistState();
+        renderAll();
+      });
+    });
+    root.querySelectorAll('.edit-tourn-reset[data-reset-key]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        delete tournamentEdits[btn.dataset.resetKey];
+        persistState();
+        renderAll();
+      });
+    });
   }
 
   function buildTournamentTable(list, next) {
@@ -1136,7 +1398,7 @@
     document.getElementById('nacionaisContainer').style.display = 'none';
     document.getElementById('compSubtitle').textContent = 'Torneios Abertos FPTM · 2026/2027';
 
-    const items = TOURNAMENTS.slice().sort((a,b) => a.start.localeCompare(b.start));
+    const items = effectiveTournaments(TOURNAMENTS).sort((a,b) => a.start.localeCompare(b.start));
     const next = items.find(t => t.end >= TODAY) || null;
     const pastCount = items.filter(t => t.end < TODAY).length;
     const upcomingCount = items.length - pastCount;
@@ -1194,18 +1456,30 @@
       document.getElementById('tournCount').textContent = `${filtered.length} de ${items.length} torneios`;
       body.innerHTML = buildTournamentTable(filtered, next);
     }
+    wireTournamentDateInputs(body);
   }
 
   // ===== RENDER: CAMPEONATOS NACIONAIS (provas oficiais, sem local definido) ===
   function nacionalRowHtml(t, next) {
     const isNext = !!(next && t === next);
     const isPast = t.end < TODAY;
+    const key = tournamentKey(t);
+    const hasEdit = !!tournamentEdits[key];
+    let startCell, endCell;
+    if (editMode) {
+      const resetBtn = hasEdit ? `<button type="button" class="edit-reset-btn edit-tourn-reset" data-reset-key="${escapeAttr(key)}">repor</button>` : '';
+      startCell = `<td data-label="Início" class="date-cell"><input type="date" class="edit-input edit-tourn-start" data-tourn-key="${escapeAttr(key)}" value="${t.start}"></td>`;
+      endCell = `<td data-label="Fim" class="date-cell"><input type="date" class="edit-input edit-tourn-end" data-tourn-key="${escapeAttr(key)}" value="${t.end}">${resetBtn}</td>`;
+    } else {
+      startCell = `<td data-label="Início" class="date-cell">${fmtDate(t.start)}</td>`;
+      endCell = `<td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>`;
+    }
     return `
-      <tr class="${isNext ? 'next-row' : ''}">
+      <tr class="${isNext ? 'next-row' : ''}${hasEdit ? ' match-edited' : ''}">
         <td data-label="Campeonato"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}</td>
         <td data-label="Categorias">${t.categories.join(', ')}</td>
-        <td data-label="Início" class="date-cell">${fmtDate(t.start)}</td>
-        <td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>
+        ${startCell}
+        ${endCell}
         <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}</td>
       </tr>`;
   }
@@ -1232,7 +1506,7 @@
     document.getElementById('nacionaisContainer').style.display = '';
     document.getElementById('compSubtitle').textContent = 'Campeonatos Nacionais FPTM · 2026/2027 (local por definir)';
 
-    const items = CAMPEONATOS_NACIONAIS.slice().sort((a,b) => a.start.localeCompare(b.start));
+    const items = effectiveTournaments(CAMPEONATOS_NACIONAIS).sort((a,b) => a.start.localeCompare(b.start));
     const next = items.find(t => t.end >= TODAY) || null;
     const pastCount = items.filter(t => t.end < TODAY).length;
     const upcomingCount = items.length - pastCount;
@@ -1260,7 +1534,9 @@
       return true;
     });
     document.getElementById('nacionaisCount').textContent = `${filtered.length} de ${items.length} campeonatos`;
-    document.getElementById('nacionaisBody').innerHTML = buildNacionalTable(filtered, next);
+    const nacBody = document.getElementById('nacionaisBody');
+    nacBody.innerHTML = buildNacionalTable(filtered, next);
+    wireTournamentDateInputs(nacBody);
   }
 
   // ===== FILTER BAR VISIBILITY (some filters don't apply to Torneios Abertos) ==
@@ -1280,6 +1556,7 @@
   // ===== RENDER: EVERYTHING ====================================================
   function renderAll() {
     try {
+      updateEditModeUi();
       renderTabs();
       updateFilterBarVisibility();
       if (activeCompId === 'all') {
@@ -1324,7 +1601,7 @@
 
   // ===== EXPORT / IMPORT RESULTS ==============================================
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ results }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ results, matchEdits, tournamentEdits }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1344,8 +1621,10 @@
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result);
-        if (parsed && parsed.results) {
-          Object.assign(results, parsed.results);
+        if (parsed && (parsed.results || parsed.matchEdits || parsed.tournamentEdits)) {
+          if (parsed.results) Object.assign(results, parsed.results);
+          if (parsed.matchEdits) Object.assign(matchEdits, parsed.matchEdits);
+          if (parsed.tournamentEdits) Object.assign(tournamentEdits, parsed.tournamentEdits);
         } else {
           // Formato antigo: ficheiro só com resultados, sem envelope.
           Object.assign(results, parsed);
@@ -1366,8 +1645,23 @@
     document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
   });
 
-  loadPersistedState();
+  // ===== EDIT MODE BUTTON ======================================================
+  document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
+
+  // ===== SYNC BUTTON + STARTUP =================================================
+  document.getElementById('syncBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('syncBtn');
+    btn.disabled = true;
+    btn.textContent = '🔄 A atualizar…';
+    await syncFromRemote(true);
+    btn.textContent = '🔄 Atualizar';
+    btn.disabled = false;
+  });
+
+  loadLocalCache();
   renderAll();
+  syncFromRemote(true);
+  setInterval(() => syncFromRemote(true), 20000); // vai buscar alterações novas de quem partilhou este link
 </script>
 </body>
 </html>
