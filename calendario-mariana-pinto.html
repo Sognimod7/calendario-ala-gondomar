@@ -487,6 +487,63 @@
       text-transform: uppercase;
     }
   }
+
+  /* ===== IMPRESSÃO — ajustada a A4 vertical =================================
+     Esconde tudo o que só faz sentido no ecrã (abas, filtros, botões, banner
+     de edição) e força cores claras + tabela compacta para caber na largura
+     de uma folha A4 em pé, com o cabeçalho da tabela repetido em cada página. */
+  @media print {
+    @page { size: A4 portrait; margin: 12mm; }
+
+    :root, :root[data-theme="dark"] {
+      color-scheme: light;
+      --surface-1: #ffffff;
+      --surface-2: #ffffff;
+      --page-plane: #ffffff;
+      --text-primary: #000000;
+      --text-secondary: #333333;
+      --text-muted: #555555;
+      --gridline: #cccccc;
+      --border: rgba(0,0,0,0.25);
+      --highlight-bg: #eef2f6;
+    }
+
+    body { padding: 0; background: #fff; }
+    .wrap { max-width: 100%; }
+
+    .header-actions,
+    #editModeBanner,
+    .tabs,
+    .filter-bar,
+    .group-toggle,
+    .edit-reset-btn,
+    .footer-note { display: none !important; }
+
+    .header { margin-bottom: 10px; }
+    .kpis { margin-bottom: 10px; }
+
+    /* Repõe o layout normal de tabela (a regra para ecrãs estreitos transforma
+       as linhas em blocos; na impressão queremos sempre a tabela completa). */
+    thead { display: table-header-group !important; }
+    tbody tr { display: table-row !important; }
+    tbody td { display: table-cell !important; }
+    tbody td::before { content: none !important; }
+
+    .table-scroll { overflow: visible !important; }
+    table { width: 100%; font-size: 10px; }
+    th, td { padding: 4px 6px; }
+    thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    tr { page-break-inside: avoid; }
+    .volta { page-break-inside: auto; }
+    .volta-title { page-break-after: avoid; }
+
+    .edit-input, select.edit-input, input.edit-input {
+      border: none; background: transparent; padding: 0; color: inherit;
+      -webkit-appearance: none; appearance: none;
+    }
+    input[type="checkbox"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
 </style>
 </head>
 <body>
@@ -509,6 +566,7 @@
         <input type="file" id="importFile" accept="application/json" style="display:none">
       </div>
       <button class="btn" id="editModeBtn" type="button" title="Editar datas/horários/local/adversário dos jogos (pede password)">🔒 Editar jogos</button>
+      <button class="btn" id="printBtn" type="button" title="Imprimir esta vista em A4 vertical">🖨️ Imprimir</button>
       <button class="btn" id="themeToggle" type="button">🌓 Tema</button>
     </div>
   </div>
@@ -1825,6 +1883,14 @@
 
   // ===== EDIT MODE BUTTON ======================================================
   document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
+
+  // ===== PRINT BUTTON (A4 vertical) ===========================================
+  document.getElementById('printBtn').addEventListener('click', () => {
+    // Sair do modo de edição antes de imprimir, para a impressão mostrar texto
+    // simples em vez de campos de formulário.
+    if (editMode) { editMode = false; renderAll(); }
+    window.print();
+  });
 
   // ===== SYNC BUTTON + STARTUP =================================================
   document.getElementById('syncBtn').addEventListener('click', async () => {
