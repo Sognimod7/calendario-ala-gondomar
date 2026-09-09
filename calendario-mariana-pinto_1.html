@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calendário — Ala Nun'Álvares (Gondomar)</title>
+<title>Calendário — Mariana Pinto (Ala Nun'Álvares, Gondomar)</title>
 <style>
   :root {
     color-scheme: light;
@@ -24,6 +24,7 @@
     --status-neutral: #898781;
     --highlight-bg:   #eef5fd;
     --highlight-ring: #2a78d6;
+    --mariana-accent: #4a3aa7;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -45,6 +46,7 @@
       --status-neutral: #898781;
       --highlight-bg:   #16233a;
       --highlight-ring: #3987e5;
+      --mariana-accent: #9085e9;
     }
   }
   :root[data-theme="dark"] {
@@ -66,6 +68,7 @@
     --status-neutral: #898781;
     --highlight-bg:   #16233a;
     --highlight-ring: #3987e5;
+    --mariana-accent: #9085e9;
   }
 
   * { box-sizing: border-box; }
@@ -368,6 +371,26 @@
     margin-left: 8px;
   }
 
+  .mariana-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--mariana-accent);
+    background: color-mix(in srgb, var(--mariana-accent) 16%, transparent);
+    border-radius: 6px;
+    padding: 2px 7px;
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+  .mariana-check-cell { text-align: center; }
+  .mariana-checkbox { width: 17px; height: 17px; cursor: pointer; accent-color: var(--mariana-accent); }
+  tbody tr.mariana-row { background: color-mix(in srgb, var(--mariana-accent) 13%, transparent); }
+  tbody tr.mariana-row:hover { background: color-mix(in srgb, var(--mariana-accent) 20%, transparent); }
+  tbody tr.mariana-row td:first-child { box-shadow: inset 3px 0 0 var(--mariana-accent); }
+
   .result-cell { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
   .score-input {
     width: 34px;
@@ -464,6 +487,63 @@
       text-transform: uppercase;
     }
   }
+
+  /* ===== IMPRESSÃO — ajustada a A4 vertical =================================
+     Esconde tudo o que só faz sentido no ecrã (abas, filtros, botões, banner
+     de edição) e força cores claras + tabela compacta para caber na largura
+     de uma folha A4 em pé, com o cabeçalho da tabela repetido em cada página. */
+  @media print {
+    @page { size: A4 portrait; margin: 12mm; }
+
+    :root, :root[data-theme="dark"] {
+      color-scheme: light;
+      --surface-1: #ffffff;
+      --surface-2: #ffffff;
+      --page-plane: #ffffff;
+      --text-primary: #000000;
+      --text-secondary: #333333;
+      --text-muted: #555555;
+      --gridline: #cccccc;
+      --border: rgba(0,0,0,0.25);
+      --highlight-bg: #eef2f6;
+    }
+
+    body { padding: 0; background: #fff; }
+    .wrap { max-width: 100%; }
+
+    .header-actions,
+    #editModeBanner,
+    .tabs,
+    .filter-bar,
+    .group-toggle,
+    .edit-reset-btn,
+    .footer-note { display: none !important; }
+
+    .header { margin-bottom: 10px; }
+    .kpis { margin-bottom: 10px; }
+
+    /* Repõe o layout normal de tabela (a regra para ecrãs estreitos transforma
+       as linhas em blocos; na impressão queremos sempre a tabela completa). */
+    thead { display: table-header-group !important; }
+    tbody tr { display: table-row !important; }
+    tbody td { display: table-cell !important; }
+    tbody td::before { content: none !important; }
+
+    .table-scroll { overflow: visible !important; }
+    table { width: 100%; font-size: 10px; }
+    th, td { padding: 4px 6px; }
+    thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    tr { page-break-inside: avoid; }
+    .volta { page-break-inside: auto; }
+    .volta-title { page-break-after: avoid; }
+
+    .edit-input, select.edit-input, input.edit-input {
+      border: none; background: transparent; padding: 0; color: inherit;
+      -webkit-appearance: none; appearance: none;
+    }
+    input[type="checkbox"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
 </style>
 </head>
 <body>
@@ -471,20 +551,22 @@
 
   <div class="header">
     <div class="team">
-      <div class="team-badge">ALA</div>
+      <div class="team-badge">MP</div>
       <div>
-        <h1>Ala Nun'Álvares (Gondomar)</h1>
+        <h1>Mariana Pinto</h1>
+        <p style="margin:0 0 3px; color:var(--text-secondary); font-size:12.5px;">Ténis de Mesa · Ala Nun'Álvares (Gondomar) · nasc. 26-01-2012</p>
         <p id="compSubtitle">Todas as competições carregadas · 2026/2027</p>
       </div>
     </div>
     <div class="header-actions">
       <div class="results-io">
-        <button class="btn" id="exportBtn" type="button">⬇ Exportar resultados</button>
-        <button class="btn" id="importBtn" type="button">⬆ Importar resultados</button>
+        <button class="btn" id="syncBtn" type="button" title="Vai buscar as marcações mais recentes de quem partilhou este link">🔄 Atualizar</button>
+        <button class="btn" id="exportBtn" type="button">⬇ Exportar dados</button>
+        <button class="btn" id="importBtn" type="button">⬆ Importar dados</button>
         <input type="file" id="importFile" accept="application/json" style="display:none">
       </div>
-      <button class="btn" id="syncBtn" type="button" title="Vai buscar as alterações mais recentes de quem partilhou este link">🔄 Atualizar</button>
       <button class="btn" id="editModeBtn" type="button" title="Editar datas/horários/local/adversário dos jogos (pede password)">🔒 Editar jogos</button>
+      <button class="btn" id="printBtn" type="button" title="Imprimir esta vista em A4 vertical">🖨️ Imprimir</button>
       <button class="btn" id="themeToggle" type="button">🌓 Tema</button>
     </div>
   </div>
@@ -495,7 +577,7 @@
 
   <div class="kpis" id="kpiRow"></div>
 
-  <div class="filter-bar">
+  <div class="filter-bar" id="filterBar">
     <div class="filter-group">
       <label for="fVolta">Volta</label>
       <select id="fVolta">
@@ -571,7 +653,7 @@
     <div class="table-scroll">
       <table>
         <thead>
-          <tr><th>Data</th><th>Competição</th><th>Jornada</th><th>Nº Encontro</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+          <tr><th>Data</th><th>Competição</th><th>Jornada</th><th>Nº Encontro</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th><th>Mariana</th></tr>
         </thead>
         <tbody id="allBody"></tbody>
       </table>
@@ -606,7 +688,7 @@
       <div class="table-scroll">
         <table>
           <thead>
-            <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+            <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th><th>Mariana</th></tr>
           </thead>
           <tbody id="v1body"></tbody>
         </table>
@@ -618,9 +700,26 @@
       <div class="table-scroll">
         <table>
           <thead>
-            <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th></tr>
+            <tr><th>Nº Encontro</th><th>Jornada</th><th>Data</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th><th>Mariana</th></tr>
           </thead>
           <tbody id="v2body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mariana Pinto: subconjunto selecionado de jogos/torneios para ela disputar -->
+  <!-- Jogos, torneios e campeonatos nacionais juntos numa só lista ordenada por
+       data, tal como acontece na vista "Todos os Jogos". -->
+  <div id="marianaContainer" style="display:none;">
+    <div class="volta">
+      <div class="volta-title"><span>🏓 Provas Selecionadas para a Mariana</span><span class="count" id="marianaAllCount"></span></div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Data</th><th>Competição</th><th>Jornada</th><th>Nº Encontro</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th><th>Mariana</th></tr>
+          </thead>
+          <tbody id="marianaAllBody"></tbody>
         </table>
       </div>
     </div>
@@ -629,11 +728,12 @@
   <div class="footer-note">
     <strong>Como atualizar este dashboard:</strong> quando tiveres o calendário de outra competição ou torneio (Taça de Portugal, torneios distritais, etc.), envia o ficheiro na conversa com o Claude e é adicionada uma nova aba — e essa competição passa também a contar automaticamente na aba <em>Todos os Jogos</em>. As abas a tracejado ainda não têm dados carregados.
     <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente.
-    <br><strong>Editar jogos:</strong> o botão <em>🔒 Editar jogos</em> no topo pede uma password — depois de introduzida corretamente, a data, o horário, o local (casa/fora) e o adversário de cada jogo ficam editáveis diretamente nas tabelas. As alterações ficam gravadas automaticamente e aparecem para quem abrir este link (ao fim de alguns segundos, ou de imediato ao clicar <em>🔄 Atualizar</em>). Usa "repor" junto à data para desfazer uma alteração e voltar ao valor original.
+    <br><strong>Editar jogos:</strong> o botão <em>🔒 Editar jogos</em> no topo pede uma password — depois de introduzida corretamente, a data, o horário, o local (casa/fora) e o adversário de cada jogo ficam editáveis diretamente nas tabelas. As alterações ficam gravadas automaticamente e aparecem para quem abrir este link. Usa "repor" junto à data para desfazer uma alteração e voltar ao valor original.
     <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
-    <br><strong>Campeonatos Nacionais:</strong> lista os campeonatos nacionais oficiais da FPTM (CNI, CNE, CN Pares Jovens), com data e categorias — o local ainda não está definido pela federação.
-    <br><strong>Todos os Jogos + Torneios/Campeonatos na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa, os torneios abertos e os campeonatos nacionais. Um jogo marcado para o mesmo dia de um torneio ou campeonato fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
-    <br><strong>Partilha entre dispositivos:</strong> os resultados e as edições de jogos são guardados automaticamente e partilhados entre todos os que abrem este link. Usa <em>Exportar resultados</em> para criar um ficheiro de cópia de segurança, e <em>Importar resultados</em> para os repor a partir desse ficheiro.
+    <br><strong>Campeonatos Nacionais:</strong> lista os campeonatos nacionais oficiais da FPTM (CNI, CNE, CN Pares Jovens), com data e categorias — o local ainda não está definido pela federação. Tem também a caixa "Mariana".
+    <br><strong>Todos os Jogos + Torneios/Campeonatos na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa, os torneios abertos e os campeonatos nacionais (com a caixa "Mariana" disponível ali também). Um jogo marcado para o mesmo dia de um torneio ou campeonato fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
+    <br><strong>Mariana:</strong> marca a caixa "Mariana" em qualquer jogo de equipa, torneio ou campeonato nacional para o adicionares à aba 🏓 Mariana — essa aba junta tudo o que estiver marcado, destacado a roxo.
+    <br><strong>Partilha entre dispositivos:</strong> os resultados e as marcações da Mariana são guardados automaticamente e partilhados entre todos os que abrem este link — quando alguém marca algo, aparece nos outros telemóveis/computadores ao fim de alguns segundos (ou de imediato ao clicar <em>🔄 Atualizar</em>). Usa <em>Exportar dados</em> para criar um ficheiro de cópia de segurança, e <em>Importar dados</em> para os repor a partir desse ficheiro.
     <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
   </div>
 
@@ -774,9 +874,10 @@
   // ===== STATE ===============================================================
   // Manually entered results, keyed by `${competitionId}|${encontro}` -> {ours, theirs}
   const results = {};
+  const marianaSelections = {}; // keyed like `results` for matches, or by tournament name
   // Edições manuais aos jogos (data/hora/local/adversário), keyed like `results`.
-  // Cada entrada é só os campos alterados, ex: { date: '2026-11-01' } — os
-  // restantes campos continuam a vir dos dados originais da competição.
+  // Cada entrada é só os campos alterados — os restantes continuam a vir dos
+  // dados originais da competição.
   const matchEdits = {};
   // Edições manuais às datas dos torneios abertos e campeonatos nacionais,
   // keyed pelo nome (tournamentKey). Ex: { start: '2027-03-13', end: '2027-03-14' }.
@@ -789,14 +890,15 @@
   function effectiveTournaments(list) { return list.map(effectiveTournament); }
 
   // ===== SHARED PERSISTENCE (Firebase Realtime Database) ======================
-  // Esta página funciona como um site próprio (fora da sandbox de artifacts do
-  // Claude), por isso consegue falar com uma pequena base de dados na nuvem —
-  // toda a gente que abre este link lê/escreve o mesmo estado partilhado, em
-  // vez de cada dispositivo guardar só a sua própria cópia. O localStorage
-  // continua a servir de cache instantânea offline.
+  // This page runs as its own website (not inside a Claude artifact sandbox),
+  // so it can talk to a small free cloud database — everyone who opens this
+  // link reads/writes the same shared state, instead of each device keeping
+  // its own local copy. localStorage stays as an instant offline cache so the
+  // page still shows the last known data immediately, before the network
+  // round-trip finishes (and still works if the connection drops).
   const FIREBASE_BASE = 'https://calendario-tm-mariana-default-rtdb.europe-west1.firebasedatabase.app';
-  const FIREBASE_PATH = 'clubeData';
-  const STORAGE_KEY = 'ala-gondomar-resultados-v2';
+  const FIREBASE_PATH = 'marianaData';
+  const STORAGE_KEY = 'mariana-pinto-dados-v1';
 
   function loadLocalCache() {
     try {
@@ -804,19 +906,21 @@
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (parsed && parsed.results) Object.assign(results, parsed.results);
+      if (parsed && parsed.marianaSelections) Object.assign(marianaSelections, parsed.marianaSelections);
       if (parsed && parsed.matchEdits) Object.assign(matchEdits, parsed.matchEdits);
       if (parsed && parsed.tournamentEdits) Object.assign(tournamentEdits, parsed.tournamentEdits);
     } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
   }
   function saveLocalCache() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, matchEdits, tournamentEdits }));
-    } catch (e) { /* ignora — continua a funcionar só sem guardar automaticamente */ }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits }));
+    } catch (e) { /* ignora */ }
   }
 
-  // Guardado como STRING codificada em JSON (não um objeto aninhado) de propósito:
-  // nomes de adversários/torneios podem ter caracteres que o Firebase proíbe em
-  // chaves (ex: "/") — codificar tudo como uma só string evita esse problema.
+  // Stored as a JSON-encoded STRING (not a nested object) on purpose: tournament
+  // names contain characters Firebase forbids in keys (e.g. "/" in "IFC Torrense
+  // / Cidade do Seixal") — encoding the whole payload as one string sidesteps
+  // that restriction entirely.
   async function fetchRemoteState() {
     try {
       const res = await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}.json`, { cache: 'no-store' });
@@ -827,7 +931,7 @@
   }
   async function pushRemoteState() {
     try {
-      const payload = JSON.stringify({ results, matchEdits, tournamentEdits });
+      const payload = JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits });
       await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}.json`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -841,9 +945,9 @@
     pushRemoteState();
   }
 
-  // Vai buscar a cópia partilhada e torna-a autoritativa localmente também, para
-  // que todos convirjam para a mesma informação. Chamado no arranque, num
-  // temporizador, e pelo botão manual "🔄 Atualizar".
+  // Pulls the shared copy and makes it authoritative locally too, so everyone
+  // converges on the same picture. Called on load, on a timer, and via the
+  // manual "Atualizar" button.
   let syncing = false;
   async function syncFromRemote(rerender) {
     if (syncing) return;
@@ -851,9 +955,11 @@
     const remote = await fetchRemoteState();
     if (remote) {
       Object.keys(results).forEach(k => delete results[k]);
+      Object.keys(marianaSelections).forEach(k => delete marianaSelections[k]);
       Object.keys(matchEdits).forEach(k => delete matchEdits[k]);
       Object.keys(tournamentEdits).forEach(k => delete tournamentEdits[k]);
       if (remote.results) Object.assign(results, remote.results);
+      if (remote.marianaSelections) Object.assign(marianaSelections, remote.marianaSelections);
       if (remote.matchEdits) Object.assign(matchEdits, remote.matchEdits);
       if (remote.tournamentEdits) Object.assign(tournamentEdits, remote.tournamentEdits);
       saveLocalCache();
@@ -990,8 +1096,8 @@
     }
     return passesFilter(e);
   }
-  // Torneios que decorrem numa dada data (início ou fim inclusive) — usado para
-  // assinalar jogos de equipa marcados para o mesmo dia de um torneio aberto.
+  // Torneios/campeonatos que decorrem numa dada data (início ou fim inclusive)
+  // — usado para assinalar jogos de equipa marcados para o mesmo dia.
   function tournamentsOnDate(dateIso) {
     return [...effectiveTournaments(TOURNAMENTS), ...effectiveTournaments(CAMPEONATOS_NACIONAIS)].filter(t => dateIso >= t.start && dateIso <= t.end);
   }
@@ -1005,9 +1111,14 @@
     const key = resultKey(m._compId, m.encontro);
     const r = results[key] || {};
     const outcome = outcomeOf(r);
+    const marianaOn = !!marianaSelections[key];
     const tr = document.createElement('tr');
     const conflictTourns = opts.combined ? tournamentsOnDate(m.date) : [];
-    tr.className = [isNext ? 'next-row' : '', conflictTourns.length ? 'date-conflict-row' : ''].filter(Boolean).join(' ');
+    const rowClasses = [];
+    if (isNext) rowClasses.push('next-row');
+    if (marianaOn) rowClasses.push('mariana-row');
+    if (conflictTourns.length) rowClasses.push('date-conflict-row');
+    if (rowClasses.length) tr.className = rowClasses.join(' ');
 
     const nextPill = isNext ? '<span class="next-pill">Próximo</span>' : '';
     const conflictBadge = conflictTourns.length
@@ -1037,19 +1148,21 @@
           ${outcome ? `<span class="result-badge ${outcome}">${outcome === 'win' ? 'V' : outcome === 'loss' ? 'D' : 'E'}</span>` : ''}
         </div>
       </td>`;
+    const marianaCell = `<td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>`;
 
     if (opts.combined) {
       const compCell = `<td data-label="Competição"><span class="comp-badge">${m._compLabel || '—'}</span></td>`;
       const jornadaLabel = m.round || `${m.volta}ª volta · J${m.jornada}`;
-      const jornadaCell = `<td data-label="Jornada"><span class="jornada-combined">${jornadaLabel}</span>${nextPill}</td>`;
-      tr.innerHTML = dateCell + compCell + jornadaCell + encontroCell + localCell + oppCell + timeCell + resultCell;
+      const jornadaCell = `<td data-label="Jornada"><span class="jornada-combined">${jornadaLabel}</span>${nextPill}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>`;
+      tr.innerHTML = dateCell + compCell + jornadaCell + encontroCell + localCell + oppCell + timeCell + resultCell + marianaCell;
     } else {
       const jornadaLabel = m.round || `${m.jornada}ª`;
-      const jornadaCell = `<td data-label="Jornada"><span class="jornada-num">${jornadaLabel}</span>${nextPill}</td>`;
-      tr.innerHTML = encontroCell + jornadaCell + dateCell + localCell + oppCell + timeCell + resultCell;
+      const jornadaCell = `<td data-label="Jornada"><span class="jornada-num">${jornadaLabel}</span>${nextPill}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>`;
+      tr.innerHTML = encontroCell + jornadaCell + dateCell + localCell + oppCell + timeCell + resultCell + marianaCell;
     }
 
     wireResultInputs(tr, key);
+    wireMarianaCheckbox(tr, key);
     if (editMode) wireEditInputs(tr, key);
     return tr;
   }
@@ -1082,13 +1195,18 @@
   // reaproveita as mesmas colunas dos jogos de equipa (não tem adversário fixo
   // nem resultado, por isso alguns campos ficam adaptados) para que, ordenado
   // por data, seja fácil ver se há jogos marcados para o mesmo dia de um torneio.
-  function makeTournamentCombinedRow(t) {
+  // Inclui também a caixa "Mariana", ligada com o mesmo wireTournamentCheckboxes
+  // já usado na aba Torneios Abertos.
+  function makeTournamentCombinedRow(t, idx) {
     const tr = document.createElement('tr');
-    tr.className = 'tournament-combined-row';
-    const isNacional = t._kind === 'nacional';
     const key = tournamentKey(t);
+    const marianaOn = !!marianaSelections[key];
+    const isNacional = t._kind === 'nacional';
     const hasEdit = !!tournamentEdits[key];
-    if (hasEdit) tr.className += ' match-edited';
+    const rowClasses = ['tournament-combined-row'];
+    if (marianaOn) rowClasses.push('mariana-row');
+    if (hasEdit) rowClasses.push('match-edited');
+    tr.className = rowClasses.join(' ');
     const badge = isNacional ? '🏅 Campeonato' : '🏆 Torneio';
     const localCell = t.city || '—';
     const regionCell = t.region ? (REGION_LABELS[t.region] || t.region) : '—';
@@ -1107,12 +1225,13 @@
     tr.innerHTML = `
       ${dateCell}
       <td data-label="Competição"><span class="comp-badge tourn-badge">${badge}</span></td>
-      <td data-label="Jornada"><span class="jornada-combined">${t.name}</span></td>
+      <td data-label="Jornada"><span class="jornada-combined">${t.name}</span>${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
       <td data-label="Nº Encontro">—</td>
       <td data-label="Local">${localCell}</td>
       <td data-label="Adversário"><strong>${t.categories.join(', ')}</strong></td>
       <td data-label="Horário"><span class="comp-badge">${regionCell}</span></td>
-      <td data-label="Nosso resultado">—</td>`;
+      <td data-label="Nosso resultado">—</td>
+      <td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" data-tourn-key="${escapeAttr(key)}" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>`;
     if (editMode) wireTournamentEditInputs(tr, key);
     return tr;
   }
@@ -1173,6 +1292,36 @@
     }
     oursInput.addEventListener('change', commit);
     theirsInput.addEventListener('change', commit);
+  }
+
+  function wireMarianaCheckbox(tr, key) {
+    const cb = tr.querySelector('.mariana-checkbox');
+    if (!cb) return;
+    cb.addEventListener('change', () => {
+      if (cb.checked) marianaSelections[key] = true; else delete marianaSelections[key];
+      tr.classList.toggle('mariana-row', cb.checked);
+      persistState();
+      if (activeCompId === 'mariana') renderMariana();
+    });
+  }
+
+  // Wires "Mariana" checkboxes inside HTML-string-built tournament/campeonato
+  // rows (they aren't created via document.createElement, so listeners attach
+  // after insertion). Keyed by nome (data-tourn-key) em vez de índice, para
+  // funcionar tanto para TOURNAMENTS como para CAMPEONATOS_NACIONAIS sem
+  // ambiguidade sobre a que lista o índice pertence.
+  function wireTournamentCheckboxes(root) {
+    root.querySelectorAll('.mariana-checkbox[data-tourn-key]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const key = cb.dataset.tournKey;
+        if (!key) return;
+        if (cb.checked) marianaSelections[key] = true; else delete marianaSelections[key];
+        const tr = cb.closest('tr');
+        if (tr) tr.classList.toggle('mariana-row', cb.checked);
+        persistState();
+        if (activeCompId === 'mariana') renderMariana();
+      });
+    });
   }
 
   // ===== KPIs ==================================================================
@@ -1246,6 +1395,14 @@
     nacBtn.addEventListener('click', () => { activeCompId = 'nacionais'; renderAll(); });
     tabRow.appendChild(nacBtn);
 
+    const marianaBtn = document.createElement('button');
+    marianaBtn.className = 'tab';
+    marianaBtn.setAttribute('role', 'tab');
+    marianaBtn.setAttribute('aria-selected', String(activeCompId === 'mariana'));
+    marianaBtn.textContent = '🏓 Mariana';
+    marianaBtn.addEventListener('click', () => { activeCompId = 'mariana'; renderAll(); });
+    tabRow.appendChild(marianaBtn);
+
     PLACEHOLDER_TABS.forEach(p => {
       const btn = document.createElement('button');
       btn.className = 'tab placeholder';
@@ -1275,11 +1432,11 @@
     // Junta jogos de equipa, torneios abertos e campeonatos nacionais numa só
     // lista ordenada por data, para se ver de imediato se algum jogo calha no
     // mesmo dia de um torneio/campeonato (jogos nessa situação ficam com o
-    // selo 🏆 e destacados a amarelo).
+    // selo 🏆 e destacados a laranja).
     const events = [
       ...matches.map(m => ({ ...m, _kind: 'match' })),
-      ...effectiveTournaments(TOURNAMENTS).map(t => ({ ...t, _kind: 'tournament', date: t.start })),
-      ...effectiveTournaments(CAMPEONATOS_NACIONAIS).map(t => ({ ...t, _kind: 'nacional', date: t.start })),
+      ...effectiveTournaments(TOURNAMENTS).map((t, i) => ({ ...t, _kind: 'tournament', date: t.start, _idx: i })),
+      ...effectiveTournaments(CAMPEONATOS_NACIONAIS).map((t, i) => ({ ...t, _kind: 'nacional', date: t.start, _idx: i })),
     ].sort((a, b) => a.date.localeCompare(b.date));
 
     const rows = events.filter(passesFilterEvent);
@@ -1287,13 +1444,14 @@
     const body = document.getElementById('allBody');
     body.innerHTML = '';
     if (!rows.length) {
-      body.innerHTML = emptyRow(8, events.length);
+      body.innerHTML = emptyRow(9, events.length);
       return;
     }
     rows.forEach(e => {
-      try { body.appendChild((e._kind === 'tournament' || e._kind === 'nacional') ? makeTournamentCombinedRow(e) : makeRow(e, nextMatch, { combined: true })); }
+      try { body.appendChild((e._kind === 'tournament' || e._kind === 'nacional') ? makeTournamentCombinedRow(e, e._idx) : makeRow(e, nextMatch, { combined: true })); }
       catch (err) { showFatalError(err); }
     });
+    wireTournamentCheckboxes(body);
   }
 
   // ===== RENDER: SINGLE COMPETITION VIEW =======================================
@@ -1317,7 +1475,7 @@
       const body = document.getElementById(bodyId);
       body.innerHTML = '';
       if (!rows.length) {
-        body.innerHTML = emptyRow(7, allInVolta.length);
+        body.innerHTML = emptyRow(8, allInVolta.length);
         return;
       }
       rows.forEach(m => {
@@ -1336,6 +1494,7 @@
     const isNext = !!(next && t === next);
     const isPast = t.end < TODAY;
     const key = tournamentKey(t);
+    const marianaOn = !!marianaSelections[key];
     const hasEdit = !!tournamentEdits[key];
     let startCell, endCell;
     if (editMode) {
@@ -1347,8 +1506,8 @@
       endCell = `<td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>`;
     }
     return `
-      <tr class="${isNext ? 'next-row' : ''}${hasEdit ? ' match-edited' : ''}">
-        <td data-label="Torneio"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}</td>
+      <tr class="${isNext ? 'next-row' : ''}${marianaOn ? ' mariana-row' : ''}${hasEdit ? ' match-edited' : ''}">
+        <td data-label="Torneio"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
         <td data-label="Pavilhão" class="tournament-venue">${t.venue}</td>
         <td data-label="Localidade">${t.city}</td>
         <td data-label="Região"><span class="comp-badge">${REGION_LABELS[t.region] || t.region}</span></td>
@@ -1357,6 +1516,7 @@
         ${startCell}
         ${endCell}
         <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}</td>
+        <td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" data-tourn-key="${escapeAttr(key)}" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>
       </tr>`;
   }
 
@@ -1384,7 +1544,7 @@
 
   function buildTournamentTable(list, next) {
     if (!list.length) {
-      return `<table><tbody>${emptyRow(9, 0)}</tbody></table>`;
+      return `<table><tbody>${emptyRow(10, 0)}</tbody></table>`;
     }
     const rows = list.map(t => {
       try { return tournamentRowHtml(t, next); }
@@ -1392,7 +1552,7 @@
     }).join('');
     return `
       <table>
-        <thead><tr><th>Torneio</th><th>Pavilhão</th><th>Localidade</th><th>Região</th><th>Pontuação</th><th>Categorias</th><th>Início</th><th>Fim</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Torneio</th><th>Pavilhão</th><th>Localidade</th><th>Região</th><th>Pontuação</th><th>Categorias</th><th>Início</th><th>Fim</th><th>Estado</th><th>Mariana</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
   }
@@ -1462,6 +1622,7 @@
       document.getElementById('tournCount').textContent = `${filtered.length} de ${items.length} torneios`;
       body.innerHTML = buildTournamentTable(filtered, next);
     }
+    wireTournamentCheckboxes(body);
     wireTournamentDateInputs(body);
   }
 
@@ -1470,6 +1631,7 @@
     const isNext = !!(next && t === next);
     const isPast = t.end < TODAY;
     const key = tournamentKey(t);
+    const marianaOn = !!marianaSelections[key];
     const hasEdit = !!tournamentEdits[key];
     let startCell, endCell;
     if (editMode) {
@@ -1481,18 +1643,19 @@
       endCell = `<td data-label="Fim" class="date-cell">${fmtDate(t.end)}</td>`;
     }
     return `
-      <tr class="${isNext ? 'next-row' : ''}${hasEdit ? ' match-edited' : ''}">
-        <td data-label="Campeonato"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}</td>
+      <tr class="${isNext ? 'next-row' : ''}${marianaOn ? ' mariana-row' : ''}${hasEdit ? ' match-edited' : ''}">
+        <td data-label="Campeonato"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
         <td data-label="Categorias">${t.categories.join(', ')}</td>
         ${startCell}
         ${endCell}
         <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}</td>
+        <td data-label="Mariana" class="mariana-check-cell"><input type="checkbox" class="mariana-checkbox" data-tourn-key="${escapeAttr(key)}" ${marianaOn ? 'checked' : ''} aria-label="Mariana vai jogar"></td>
       </tr>`;
   }
 
   function buildNacionalTable(list, next) {
     if (!list.length) {
-      return `<table><tbody>${emptyRow(5, 0)}</tbody></table>`;
+      return `<table><tbody>${emptyRow(6, 0)}</tbody></table>`;
     }
     const rows = list.map(t => {
       try { return nacionalRowHtml(t, next); }
@@ -1500,7 +1663,7 @@
     }).join('');
     return `
       <table>
-        <thead><tr><th>Campeonato</th><th>Categorias</th><th>Início</th><th>Fim</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Campeonato</th><th>Categorias</th><th>Início</th><th>Fim</th><th>Estado</th><th>Mariana</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
   }
@@ -1540,13 +1703,84 @@
       return true;
     });
     document.getElementById('nacionaisCount').textContent = `${filtered.length} de ${items.length} campeonatos`;
-    const nacBody = document.getElementById('nacionaisBody');
-    nacBody.innerHTML = buildNacionalTable(filtered, next);
-    wireTournamentDateInputs(nacBody);
+    const body = document.getElementById('nacionaisBody');
+    body.innerHTML = buildNacionalTable(filtered, next);
+    wireTournamentCheckboxes(body);
+    wireTournamentDateInputs(body);
   }
 
-  // ===== FILTER BAR VISIBILITY (some filters don't apply to Torneios Abertos) ==
+  // ===== RENDER: MARIANA (curated selection of matches + tournaments) ========
+  function renderMariana() {
+    document.getElementById('combinedContainer').style.display = 'none';
+    document.getElementById('singleCompContainer').style.display = 'none';
+    document.getElementById('tournamentsContainer').style.display = 'none';
+    document.getElementById('nacionaisContainer').style.display = 'none';
+    document.getElementById('marianaContainer').style.display = '';
+    document.getElementById('compSubtitle').textContent = 'Provas selecionadas para a Mariana jogar';
+
+    const selectedMatches = allAugmentedMatches()
+      .filter(m => marianaSelections[resultKey(m._compId, m.encontro)])
+      .sort((a,b) => a.date.localeCompare(b.date));
+    const selectedTournaments = effectiveTournaments(TOURNAMENTS)
+      .filter(t => marianaSelections[tournamentKey(t)])
+      .sort((a,b) => a.start.localeCompare(b.start));
+    const selectedNacionais = effectiveTournaments(CAMPEONATOS_NACIONAIS)
+      .filter(t => marianaSelections[tournamentKey(t)])
+      .sort((a,b) => a.start.localeCompare(b.start));
+
+    currentScopeMatches = selectedMatches;
+    const nextMatch = selectedMatches.find(m => m.date >= TODAY) || null;
+
+    const upcomingEvents = [
+      ...selectedMatches.map(m => ({ date: m.date, label: `${m.home ? 'vs (casa)' : '@ (fora)'} ${m.opponent}`, kind: 'Jogo' })),
+      ...selectedTournaments.map(t => ({ date: t.start, label: t.name, kind: 'Torneio' })),
+      ...selectedNacionais.map(t => ({ date: t.start, label: t.name, kind: 'Campeonato' })),
+    ].filter(e => e.date >= TODAY).sort((a,b) => a.date.localeCompare(b.date));
+    const next = upcomingEvents[0] || null;
+
+    const kpiRow = document.getElementById('kpiRow');
+    kpiRow.innerHTML = '';
+    const kpis = [
+      { label: 'Próxima prova', value: next ? fmtDate(next.date) : '—', sub: next ? `${next.kind} · ${next.label}` : 'Nada selecionado ainda', highlight: true },
+      { label: 'Jogos de equipa', value: String(selectedMatches.length), sub: 'Selecionados para a Mariana' },
+      { label: 'Torneios + Campeonatos', value: String(selectedTournaments.length + selectedNacionais.length), sub: 'Selecionados para a Mariana' },
+      { label: 'Total selecionado', value: String(selectedMatches.length + selectedTournaments.length + selectedNacionais.length), sub: 'Provas no total' },
+    ];
+    kpis.forEach(k => {
+      const div = document.createElement('div');
+      div.className = 'kpi' + (k.highlight ? ' highlight' : '');
+      div.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div><div class="sub">${k.sub}</div>`;
+      kpiRow.appendChild(div);
+    });
+
+    // Junta jogos de equipa, torneios abertos e campeonatos nacionais selecionados
+    // para a Mariana numa só lista ordenada por data — tal como na vista "Todos
+    // os Jogos" — em vez de três tabelas separadas por ordem fixa.
+    const marianaEvents = [
+      ...selectedMatches.map(m => ({ ...m, _kind: 'match' })),
+      ...selectedTournaments.map((t, i) => ({ ...t, _kind: 'tournament', date: t.start, _idx: i })),
+      ...selectedNacionais.map((t, i) => ({ ...t, _kind: 'nacional', date: t.start, _idx: i })),
+    ].sort((a, b) => a.date.localeCompare(b.date));
+
+    document.getElementById('marianaAllCount').textContent = `${marianaEvents.length} provas selecionadas`;
+    const allBody2 = document.getElementById('marianaAllBody');
+    allBody2.innerHTML = '';
+    if (!marianaEvents.length) {
+      allBody2.innerHTML = '<tr><td colspan="9"><div class="empty-state"><p>Ainda não marcaste nenhuma prova para a Mariana — usa a caixa "Mariana" nas outras abas.</p></div></td></tr>';
+    } else {
+      marianaEvents.forEach(e => {
+        try { allBody2.appendChild((e._kind === 'tournament' || e._kind === 'nacional') ? makeTournamentCombinedRow(e, e._idx) : makeRow(e, nextMatch, { combined: true })); }
+        catch (err) { showFatalError(err); }
+      });
+      wireTournamentCheckboxes(allBody2);
+    }
+  }
+
+  // ===== FILTER BAR VISIBILITY (some filters don't apply to Torneios Abertos / Mariana) ==
   function updateFilterBarVisibility() {
+    const filterBar = document.getElementById('filterBar');
+    if (activeCompId === 'mariana') { filterBar.style.display = 'none'; return; }
+    filterBar.style.display = '';
     const isTournaments = activeCompId === 'torneios';
     const isNacionais = activeCompId === 'nacionais';
     ['fVolta', 'fLocal', 'fResultado'].forEach(id => {
@@ -1571,6 +1805,8 @@
         renderTournaments();
       } else if (activeCompId === 'nacionais') {
         renderNacionais();
+      } else if (activeCompId === 'mariana') {
+        renderMariana();
       } else {
         renderSingle(currentCompetition());
       }
@@ -1607,11 +1843,11 @@
 
   // ===== EXPORT / IMPORT RESULTS ==============================================
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ results, matchEdits, tournamentEdits }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'resultados-ala-gondomar.json';
+    a.download = 'dados-mariana-pinto.json';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1627,18 +1863,18 @@
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result);
-        if (parsed && (parsed.results || parsed.matchEdits || parsed.tournamentEdits)) {
+        if (parsed && (parsed.results || parsed.marianaSelections || parsed.matchEdits || parsed.tournamentEdits)) {
           if (parsed.results) Object.assign(results, parsed.results);
+          if (parsed.marianaSelections) Object.assign(marianaSelections, parsed.marianaSelections);
           if (parsed.matchEdits) Object.assign(matchEdits, parsed.matchEdits);
           if (parsed.tournamentEdits) Object.assign(tournamentEdits, parsed.tournamentEdits);
         } else {
-          // Formato antigo: ficheiro só com resultados, sem envelope.
-          Object.assign(results, parsed);
+          Object.assign(results, parsed); // ficheiros antigos (só resultados, sem marcações da Mariana)
         }
         persistState();
         renderAll();
       } catch (err) {
-        alert('Não foi possível ler este ficheiro de resultados.');
+        alert('Não foi possível ler este ficheiro de dados.');
       }
       e.target.value = '';
     };
@@ -1654,6 +1890,14 @@
   // ===== EDIT MODE BUTTON ======================================================
   document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
 
+  // ===== PRINT BUTTON (A4 vertical) ===========================================
+  document.getElementById('printBtn').addEventListener('click', () => {
+    // Sair do modo de edição antes de imprimir, para a impressão mostrar texto
+    // simples em vez de campos de formulário.
+    if (editMode) { editMode = false; renderAll(); }
+    window.print();
+  });
+
   // ===== SYNC BUTTON + STARTUP =================================================
   document.getElementById('syncBtn').addEventListener('click', async () => {
     const btn = document.getElementById('syncBtn');
@@ -1667,7 +1911,7 @@
   loadLocalCache();
   renderAll();
   syncFromRemote(true);
-  setInterval(() => syncFromRemote(true), 20000); // vai buscar alterações novas de quem partilhou este link
+  setInterval(() => syncFromRemote(true), 20000); // vai buscar marcações novas de quem partilhou este link
 </script>
 </body>
 </html>
