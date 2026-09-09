@@ -237,7 +237,7 @@
     justify-content: space-between;
   }
   .volta-title .count { font-size: 12px; font-weight: 400; color: var(--text-muted); }
-  #tournBody, #marianaTournBody, #nacionaisBody, #marianaNacionaisBody, .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #tournBody, #nacionaisBody, .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   .group-toggle { display: flex; gap: 4px; }
   .group-toggle button {
@@ -651,25 +651,19 @@
   </div>
 
   <!-- Mariana Pinto: subconjunto selecionado de jogos/torneios para ela disputar -->
+  <!-- Jogos, torneios e campeonatos nacionais juntos numa só lista ordenada por
+       data, tal como acontece na vista "Todos os Jogos". -->
   <div id="marianaContainer" style="display:none;">
     <div class="volta">
-      <div class="volta-title"><span>🏓 Jogos de Equipa Selecionados</span><span class="count" id="marianaMatchCount"></span></div>
+      <div class="volta-title"><span>🏓 Provas Selecionadas para a Mariana</span><span class="count" id="marianaAllCount"></span></div>
       <div class="table-scroll">
         <table>
           <thead>
             <tr><th>Data</th><th>Competição</th><th>Jornada</th><th>Nº Encontro</th><th>Local</th><th>Adversário</th><th>Horário</th><th>Nosso resultado</th><th>Mariana</th></tr>
           </thead>
-          <tbody id="marianaMatchBody"></tbody>
+          <tbody id="marianaAllBody"></tbody>
         </table>
       </div>
-    </div>
-    <div class="volta">
-      <div class="volta-title"><span>🏓 Torneios Selecionados</span><span class="count" id="marianaTournCount"></span></div>
-      <div id="marianaTournBody"></div>
-    </div>
-    <div class="volta">
-      <div class="volta-title"><span>🏓 Campeonatos Nacionais Selecionados</span><span class="count" id="marianaNacionaisCount"></span></div>
-      <div id="marianaNacionaisBody"></div>
     </div>
   </div>
 
@@ -1672,8 +1666,6 @@
 
     currentScopeMatches = selectedMatches;
     const nextMatch = selectedMatches.find(m => m.date >= TODAY) || null;
-    const nextTourn = selectedTournaments.find(t => t.end >= TODAY) || null;
-    const nextNacional = selectedNacionais.find(t => t.end >= TODAY) || null;
 
     const upcomingEvents = [
       ...selectedMatches.map(m => ({ date: m.date, label: `${m.home ? 'vs (casa)' : '@ (fora)'} ${m.opponent}`, kind: 'Jogo' })),
@@ -1697,36 +1689,26 @@
       kpiRow.appendChild(div);
     });
 
-    document.getElementById('marianaMatchCount').textContent = `${selectedMatches.length} jogos selecionados`;
-    const matchBody = document.getElementById('marianaMatchBody');
-    matchBody.innerHTML = '';
-    if (!selectedMatches.length) {
-      matchBody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><p>Ainda não marcaste nenhum jogo de equipa para a Mariana — usa a caixa "Mariana" nas outras abas.</p></div></td></tr>';
+    // Junta jogos de equipa, torneios abertos e campeonatos nacionais selecionados
+    // para a Mariana numa só lista ordenada por data — tal como na vista "Todos
+    // os Jogos" — em vez de três tabelas separadas por ordem fixa.
+    const marianaEvents = [
+      ...selectedMatches.map(m => ({ ...m, _kind: 'match' })),
+      ...selectedTournaments.map((t, i) => ({ ...t, _kind: 'tournament', date: t.start, _idx: i })),
+      ...selectedNacionais.map((t, i) => ({ ...t, _kind: 'nacional', date: t.start, _idx: i })),
+    ].sort((a, b) => a.date.localeCompare(b.date));
+
+    document.getElementById('marianaAllCount').textContent = `${marianaEvents.length} provas selecionadas`;
+    const allBody2 = document.getElementById('marianaAllBody');
+    allBody2.innerHTML = '';
+    if (!marianaEvents.length) {
+      allBody2.innerHTML = '<tr><td colspan="9"><div class="empty-state"><p>Ainda não marcaste nenhuma prova para a Mariana — usa a caixa "Mariana" nas outras abas.</p></div></td></tr>';
     } else {
-      selectedMatches.forEach(m => {
-        try { matchBody.appendChild(makeRow(m, nextMatch, { combined: true })); }
-        catch (e) { showFatalError(e); }
+      marianaEvents.forEach(e => {
+        try { allBody2.appendChild((e._kind === 'tournament' || e._kind === 'nacional') ? makeTournamentCombinedRow(e, e._idx) : makeRow(e, nextMatch, { combined: true })); }
+        catch (err) { showFatalError(err); }
       });
-    }
-
-    document.getElementById('marianaTournCount').textContent = `${selectedTournaments.length} torneios selecionados`;
-    const tournBody2 = document.getElementById('marianaTournBody');
-    if (!selectedTournaments.length) {
-      tournBody2.innerHTML = '<table><tbody><tr><td colspan="11"><div class="empty-state"><p>Ainda não marcaste nenhum torneio para a Mariana — usa a caixa "Mariana" na aba Torneios Abertos.</p></div></td></tr></tbody></table>';
-    } else {
-      tournBody2.innerHTML = buildTournamentTable(selectedTournaments, nextTourn);
-      wireTournamentCheckboxes(tournBody2);
-      wireTournamentDateInputs(tournBody2);
-    }
-
-    document.getElementById('marianaNacionaisCount').textContent = `${selectedNacionais.length} campeonatos selecionados`;
-    const nacBody2 = document.getElementById('marianaNacionaisBody');
-    if (!selectedNacionais.length) {
-      nacBody2.innerHTML = '<table><tbody><tr><td colspan="6"><div class="empty-state"><p>Ainda não marcaste nenhum campeonato nacional para a Mariana — usa a caixa "Mariana" na aba Campeonatos Nacionais.</p></div></td></tr></tbody></table>';
-    } else {
-      nacBody2.innerHTML = buildNacionalTable(selectedNacionais, nextNacional);
-      wireTournamentCheckboxes(nacBody2);
-      wireTournamentDateInputs(nacBody2);
+      wireTournamentCheckboxes(allBody2);
     }
   }
 
