@@ -234,7 +234,7 @@
     justify-content: space-between;
   }
   .volta-title .count { font-size: 12px; font-weight: 400; color: var(--text-muted); }
-  #tournBody, #nacionaisBody, .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #tournBody, #nacionaisBody, #distritaisBody, #distritaisPendBody, .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   .group-toggle { display: flex; gap: 4px; }
   .group-toggle button {
@@ -353,6 +353,10 @@
     color: var(--text-muted);
   }
   .tournament-name { font-weight: 600; }
+  .dist-name { min-width: 185px; }
+  .row-note { display: block; font-size: 11.5px; font-weight: 400; color: var(--text-muted); margin-top: 2px; }
+  .status-pill.open { background: color-mix(in srgb, var(--status-good) 16%, transparent); color: var(--status-good); margin-left: 6px; }
+  .status-pill.muted { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); margin-left: 6px; }
   .tournament-venue { color: var(--text-secondary); }
 
   .next-pill {
@@ -599,6 +603,14 @@
     <div id="nacionaisBody"></div>
   </div>
 
+  <!-- Provas Distritais view: calendário provisório da ATMP (Associação de Ténis de Mesa do Porto) -->
+  <div class="volta" id="distritaisContainer" style="display:none;">
+    <div class="volta-title"><span>Provas Distritais — ATMP (Associação de Ténis de Mesa do Porto)</span><span class="count" id="distritaisCount"></span></div>
+    <div id="distritaisBody"></div>
+    <div class="volta-title" style="margin-top:18px;"><span>Datas por indicar</span><span class="count" id="distritaisPendCount"></span></div>
+    <div id="distritaisPendBody"></div>
+  </div>
+
   <!-- Single-competition view: split by 1ª / 2ª volta -->
   <div id="singleCompContainer" style="display:none;">
     <div class="volta">
@@ -627,12 +639,13 @@
   </div>
 
   <div class="footer-note">
-    <strong>Como atualizar este dashboard:</strong> quando tiveres o calendário de outra competição ou torneio (Taça de Portugal, torneios distritais, etc.), envia o ficheiro na conversa com o Claude e é adicionada uma nova aba — e essa competição passa também a contar automaticamente na aba <em>Todos os Jogos</em>. As abas a tracejado ainda não têm dados carregados.
+    <strong>Como atualizar este dashboard:</strong> quando tiveres o calendário de outra competição ou torneio (Taça de Portugal, outros torneios, etc.), envia o ficheiro na conversa com o Claude e é adicionada uma nova aba — e essa competição passa também a contar automaticamente na aba <em>Todos os Jogos</em>. As abas a tracejado ainda não têm dados carregados.
     <br><strong>Resultados:</strong> introduz o nosso resultado e o do adversário nas caixas da coluna "Nosso resultado" — o V/E/D é calculado automaticamente.
     <br><strong>Editar jogos:</strong> o botão <em>🔒 Editar jogos</em> no topo pede uma password — depois de introduzida corretamente, a data, o horário, o local (casa/fora) e o adversário de cada jogo ficam editáveis diretamente nas tabelas. As alterações ficam gravadas automaticamente e aparecem para quem abrir este link (ao fim de alguns segundos, ou de imediato ao clicar <em>🔄 Atualizar</em>). Usa "repor" junto à data para desfazer uma alteração e voltar ao valor original.
     <br><strong>Torneios Abertos:</strong> lista os 34 torneios abertos do calendário FPTM 2026/2027, com localidade, região e categorias de cada um (filtráveis). São provas de inscrição individual, por isso não têm adversário fixo nem resultado de equipa.
     <br><strong>Campeonatos Nacionais:</strong> lista os campeonatos nacionais oficiais da FPTM (CNI, CNE, CN Pares Jovens), com data e categorias — o local ainda não está definido pela federação.
-    <br><strong>Todos os Jogos + Torneios/Campeonatos na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa, os torneios abertos e os campeonatos nacionais. Um jogo marcado para o mesmo dia de um torneio ou campeonato fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
+    <br><strong>Provas Distritais:</strong> calendário provisório de provas distritais 2026/2027 da Associação de Ténis de Mesa do Porto (ATMP, 15-09-2026), com local previsto e datas de abertura/fecho de inscrições e sorteio. As provas ainda sem data ficam na tabela "Datas por indicar" até serem divulgadas.
+    <br><strong>Todos os Jogos + Torneios/Campeonatos na mesma data:</strong> a aba <em>Todos os Jogos</em> junta, ordenados por data, os jogos de equipa, os torneios abertos, os campeonatos nacionais e as provas distritais. Um jogo marcado para o mesmo dia de um torneio ou campeonato fica destacado a laranja com o selo 🏆, para ser fácil detetar sobreposições.
     <br><strong>Partilha entre dispositivos:</strong> os resultados e as edições de jogos são guardados automaticamente e partilhados entre todos os que abrem este link. Usa <em>Exportar resultados</em> para criar um ficheiro de cópia de segurança, e <em>Importar resultados</em> para os repor a partir desse ficheiro.
     <br>Fonte: calendários oficiais FPTM 2026/2027. Datas e horários sujeitos a alterações pela federação.
   </div>
@@ -765,9 +778,31 @@
     { name: "CNI Sub11, Sub15 e Sub19",       categories: ['Sub11','Sub15','Sub19'],        start: '2027-06-05', end: '2027-06-06' },
   ];
 
+  // Provas Distritais ATMP 2026/2027 — Calendário Provisório (Associação de
+  // Ténis de Mesa do Porto, 15-09-2026). `venue` é o "local previsto"; openReg /
+  // closeReg / draw são abertura, fecho de inscrições e sorteio. Datas sujeitas a
+  // alterações pela associação.
+  const PROVAS_DISTRITAIS = [
+    { name: "Distrital Individual · S11, S15 e Sub 19",              categories: ['Sub11','Sub15','Sub19'],         start: '2026-11-07', end: '2026-11-08', venue: 'Novelas',                         openReg: '2026-10-01', closeReg: '2026-10-25', draw: '2026-10-29', note: '7 e/ou 8 de novembro' },
+    { name: "Distrital Individual · S13 e S17",                      categories: ['Sub13','Sub17'],                 start: '2026-11-22', end: '2026-11-22', venue: 'CAR - VN Gaia',                   openReg: '2026-10-15', closeReg: '2026-11-08', draw: '2026-11-12' },
+    { name: "Distrital Individual · S9",                             categories: ['Sub9'],                          start: '2027-01-16', end: '2027-01-16', venue: 'Casa da Juventude - Guilhabreu',  openReg: '2026-12-08', closeReg: '2027-01-03', draw: '2027-01-07' },
+    { name: "Distrital Individual · Seniores",                       categories: ['Seniores'],                      start: '2027-02-06', end: '2027-02-06', venue: 'Paredes',                         openReg: '2026-12-29', closeReg: '2027-01-24', draw: '2027-01-28' },
+    { name: "Distrital Individual · Veteranos",                      categories: ['Veteranos'],                     start: '2027-02-07', end: '2027-02-07', venue: 'Paredes',                         openReg: '2026-12-29', closeReg: '2027-01-24', draw: '2027-01-28' },
+    { name: "Torneio Cidade do Porto · S9, S13, S15 e S17",          categories: ['Sub9','Sub13','Sub15','Sub17'],  start: '2027-02-20', end: '2027-02-21', venue: 'Porto',                           openReg: null,         closeReg: null,         draw: null },
+    { name: "Distrital Equipas · Seniores Masculinos 1ª e 2ª Divisão", categories: ['Seniores'],                    start: '2026-10-30', end: '2026-10-30', venue: 'Salas dos clubes',                openReg: '2026-09-16', closeReg: '2026-10-08', draw: '2026-10-15', note: 'Início da prova (30 de outubro)' },
+  ];
+
+  // Provas distritais cuja data ainda não foi divulgada ("A indicar") — só são
+  // mostradas numa tabela à parte, não entram em "Todos os Jogos".
+  const PROVAS_DISTRITAIS_POR_DEFINIR = [
+    { name: "Distrital Individual · Pares e Pares Mistos (todas as classes)", categories: [],                                   venue: 'Póvoa do Varzim',  openReg: null,         closeReg: null,         draw: null },
+    { name: "Distrital Equipas · S11, S13, S15, S17 e S19",                    categories: ['Sub11','Sub13','Sub15','Sub17','Sub19'], venue: null,           openReg: '2026-10-01', closeReg: '2026-11-30', draw: null, drawText: 'A indicar por classe' },
+    { name: "Distrital Equipas · S9",                                          categories: ['Sub9'],                             venue: null,               openReg: '2026-12-01', closeReg: '2026-12-15', draw: null },
+    { name: "Distrital Equipas · Veteranos",                                   categories: ['Veteranos'],                        venue: 'Salas dos clubes', openReg: '2027-02-01', closeReg: '2027-02-28', draw: null },
+  ];
+
   // Tabs shown as "por adicionar" — send the calendar file to fill any of these in.
   const PLACEHOLDER_TABS = [
-    { label: "Taça de Portugal (por adicionar)" },
     { label: "+ Outro torneio (por adicionar)" },
   ];
 
@@ -984,7 +1019,7 @@
   // Torneios não têm volta/local/resultado nem "jogado" — só entram na vista
   // "Todos os Jogos" quando nenhum desses filtros de jogos de equipa está ativo.
   function passesFilterEvent(e) {
-    if (e._kind === 'tournament' || e._kind === 'nacional') {
+    if (e._kind !== 'match') {
       if (filters.volta !== 'all' || filters.local !== 'all' || filters.estado !== 'all' || filters.resultado !== 'all') return false;
       return true;
     }
@@ -993,7 +1028,7 @@
   // Torneios que decorrem numa dada data (início ou fim inclusive) — usado para
   // assinalar jogos de equipa marcados para o mesmo dia de um torneio aberto.
   function tournamentsOnDate(dateIso) {
-    return [...effectiveTournaments(TOURNAMENTS), ...effectiveTournaments(CAMPEONATOS_NACIONAIS)].filter(t => dateIso >= t.start && dateIso <= t.end);
+    return [...effectiveTournaments(TOURNAMENTS), ...effectiveTournaments(CAMPEONATOS_NACIONAIS), ...effectiveTournaments(PROVAS_DISTRITAIS)].filter(t => dateIso >= t.start && dateIso <= t.end);
   }
   function emptyRow(colspan, totalAvailable) {
     return `<tr><td colspan="${colspan}"><div class="empty-state"><p>Sem jogos correspondentes${totalAvailable ? ' ao filtro aplicado' : ' — ainda não há dados carregados'}.</p></div></td></tr>`;
@@ -1089,8 +1124,8 @@
     const key = tournamentKey(t);
     const hasEdit = !!tournamentEdits[key];
     if (hasEdit) tr.className += ' match-edited';
-    const badge = isNacional ? '🏅 Campeonato' : '🏆 Torneio';
-    const localCell = t.city || '—';
+    const badge = isNacional ? '🏅 Campeonato' : (t._kind === 'distrital' ? '🏛️ Distrital' : '🏆 Torneio');
+    const localCell = t.city || t.venue || '—';
     const regionCell = t.region ? (REGION_LABELS[t.region] || t.region) : '—';
     let dateCell;
     if (editMode) {
@@ -1246,6 +1281,14 @@
     nacBtn.addEventListener('click', () => { activeCompId = 'nacionais'; renderAll(); });
     tabRow.appendChild(nacBtn);
 
+    const distBtn = document.createElement('button');
+    distBtn.className = 'tab';
+    distBtn.setAttribute('role', 'tab');
+    distBtn.setAttribute('aria-selected', String(activeCompId === 'distritais'));
+    distBtn.textContent = '🏛️ Provas Distritais';
+    distBtn.addEventListener('click', () => { activeCompId = 'distritais'; renderAll(); });
+    tabRow.appendChild(distBtn);
+
     PLACEHOLDER_TABS.forEach(p => {
       const btn = document.createElement('button');
       btn.className = 'tab placeholder';
@@ -1280,6 +1323,7 @@
       ...matches.map(m => ({ ...m, _kind: 'match' })),
       ...effectiveTournaments(TOURNAMENTS).map(t => ({ ...t, _kind: 'tournament', date: t.start })),
       ...effectiveTournaments(CAMPEONATOS_NACIONAIS).map(t => ({ ...t, _kind: 'nacional', date: t.start })),
+      ...effectiveTournaments(PROVAS_DISTRITAIS).map(t => ({ ...t, _kind: 'distrital', date: t.start })),
     ].sort((a, b) => a.date.localeCompare(b.date));
 
     const rows = events.filter(passesFilterEvent);
@@ -1291,7 +1335,7 @@
       return;
     }
     rows.forEach(e => {
-      try { body.appendChild((e._kind === 'tournament' || e._kind === 'nacional') ? makeTournamentCombinedRow(e) : makeRow(e, nextMatch, { combined: true })); }
+      try { body.appendChild((e._kind !== 'match') ? makeTournamentCombinedRow(e) : makeRow(e, nextMatch, { combined: true })); }
       catch (err) { showFatalError(err); }
     });
   }
@@ -1545,10 +1589,151 @@
     wireTournamentDateInputs(nacBody);
   }
 
+  // ===== RENDER: PROVAS DISTRITAIS (ATMP — Associação de Ténis de Mesa do Porto) ===
+  function fmtShort(iso) {
+    if (!iso) return 'A indicar';
+    const [y, mo, d] = iso.split('-');
+    return `${d}-${mo}-${y}`;
+  }
+  // Intervalo de datas compacto: "Sáb 07 – Dom 08-11-2026" (mesmo mês) ou datas completas.
+  function fmtRange(a, b) {
+    if (!b || a === b) return fmtDate(a);
+    const da = new Date(a + 'T00:00:00'), db = new Date(b + 'T00:00:00');
+    if (da.getMonth() === db.getMonth() && da.getFullYear() === db.getFullYear()) {
+      const wa = WEEKDAYS[da.getDay()].slice(0,3), wb = WEEKDAYS[db.getDay()].slice(0,3);
+      const dd1 = String(da.getDate()).padStart(2,'0'), dd2 = String(db.getDate()).padStart(2,'0');
+      const mm = String(db.getMonth()+1).padStart(2,'0');
+      return `${wa} ${dd1} – ${wb} ${dd2}-${mm}-${db.getFullYear()}`;
+    }
+    return `${fmtDate(a)} – ${fmtDate(b)}`;
+  }
+  // Estado das inscrições: 'open' (a decorrer), 'closed' (fechadas), 'soon' (ainda não abriram) ou null.
+  function regStatus(t) {
+    if (!t.openReg || !t.closeReg) return null;
+    if (TODAY > t.closeReg) return 'closed';
+    if (TODAY >= t.openReg) return 'open';
+    return 'soon';
+  }
+  function regPill(t, isPast) {
+    if (isPast) return '';
+    const st = regStatus(t);
+    if (st === 'open') return `<span class="status-pill open" title="Fecham a ${fmtShort(t.closeReg)}">Inscrições abertas</span>`;
+    if (st === 'closed') return '<span class="status-pill muted">Inscrições fechadas</span>';
+    return '';
+  }
+  function distritalRowHtml(t, next) {
+    const isNext = !!(next && t === next);
+    const isPast = t.end < TODAY;
+    const key = tournamentKey(t);
+    const hasEdit = !!tournamentEdits[key];
+    let dateCell;
+    if (editMode) {
+      const resetBtn = hasEdit ? `<button type="button" class="edit-reset-btn edit-tourn-reset" data-reset-key="${escapeAttr(key)}">repor</button>` : '';
+      dateCell = `<td data-label="Data" class="date-cell"><input type="date" class="edit-input edit-tourn-start" data-tourn-key="${escapeAttr(key)}" value="${t.start}" aria-label="Início"><input type="date" class="edit-input edit-tourn-end" data-tourn-key="${escapeAttr(key)}" value="${t.end}" aria-label="Fim">${resetBtn}</td>`;
+    } else {
+      dateCell = `<td data-label="Data" class="date-cell">${fmtRange(t.start, t.end)}</td>`;
+    }
+    const noteHtml = t.note ? `<span class="row-note">${t.note}</span>` : '';
+    return `
+      <tr class="${isNext ? 'next-row' : ''}${hasEdit ? ' match-edited' : ''}">
+        <td data-label="Prova" class="dist-name"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}${noteHtml}</td>
+        <td data-label="Classes">${t.categories.join(', ') || '—'}</td>
+        <td data-label="Local previsto" class="tournament-venue">${t.venue || 'A indicar'}</td>
+        ${dateCell}
+        <td data-label="Abertura inscrições" class="date-cell">${fmtShort(t.openReg)}</td>
+        <td data-label="Fecho inscrições" class="date-cell">${fmtShort(t.closeReg)}</td>
+        <td data-label="Sorteio" class="date-cell">${fmtShort(t.draw)}</td>
+        <td data-label="Estado">${isPast ? '<span class="status-pill done">Realizado</span>' : '<span class="status-pill">Por realizar</span>'}${regPill(t, isPast)}</td>
+      </tr>`;
+  }
+
+  function buildDistritalTable(list, next) {
+    if (!list.length) {
+      return `<table><tbody>${emptyRow(8, 0)}</tbody></table>`;
+    }
+    const rows = list.map(t => {
+      try { return distritalRowHtml(t, next); }
+      catch (e) { showFatalError(e); return ''; }
+    }).join('');
+    return `
+      <table>
+        <thead><tr><th>Prova</th><th>Classes</th><th>Local previsto</th><th>Data</th><th title="Abertura de inscrições">Abre insc.</th><th title="Fecho de inscrições">Fecha insc.</th><th>Sorteio</th><th>Estado</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // Tabela estática das provas ainda sem data divulgada.
+  function buildDistritalPendingTable(list) {
+    const rows = list.map(t => `
+      <tr>
+        <td data-label="Prova"><span class="tournament-name">${t.name}</span></td>
+        <td data-label="Classes">${t.categories.join(', ') || 'Todas as classes'}</td>
+        <td data-label="Local previsto" class="tournament-venue">${t.venue || 'A indicar'}</td>
+        <td data-label="Data">A indicar</td>
+        <td data-label="Abertura inscrições" class="date-cell">${fmtShort(t.openReg)}</td>
+        <td data-label="Fecho inscrições" class="date-cell">${fmtShort(t.closeReg)}</td>
+        <td data-label="Sorteio" class="date-cell">${t.drawText || fmtShort(t.draw)}</td>
+        <td data-label="Inscrições">${regPill(t, false) || '—'}</td>
+      </tr>`).join('');
+    return `
+      <table>
+        <thead><tr><th>Prova</th><th>Classes</th><th>Local previsto</th><th>Data</th><th title="Abertura de inscrições">Abre insc.</th><th title="Fecho de inscrições">Fecha insc.</th><th>Sorteio</th><th>Inscrições</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function renderDistritais() {
+    ['combinedContainer', 'singleCompContainer', 'tournamentsContainer', 'nacionaisContainer', 'marianaContainer'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    document.getElementById('distritaisContainer').style.display = '';
+    document.getElementById('compSubtitle').textContent = 'Provas Distritais ATMP · 2026/2027 (calendário provisório de 15-09-2026)';
+
+    const items = effectiveTournaments(PROVAS_DISTRITAIS).sort((a,b) => a.start.localeCompare(b.start));
+    const next = items.find(t => t.end >= TODAY) || null;
+    const pastCount = items.filter(t => t.end < TODAY).length;
+    const upcomingCount = items.length - pastCount;
+    const openRegs = [...items, ...PROVAS_DISTRITAIS_POR_DEFINIR].filter(t => t.end === undefined || t.end >= TODAY).filter(t => regStatus(t) === 'open');
+
+    const kpiRow = document.getElementById('kpiRow');
+    kpiRow.innerHTML = '';
+    const kpis = [
+      { label: 'Próxima prova distrital', value: next ? fmtDate(next.start) : '—', sub: next ? `${next.name}` : 'Sem provas agendadas', highlight: true },
+      { label: 'Provas com data', value: String(items.length), sub: `+ ${PROVAS_DISTRITAIS_POR_DEFINIR.length} por indicar` },
+      { label: 'Por realizar', value: String(upcomingCount), sub: 'A partir de hoje' },
+      { label: 'Inscrições abertas', value: String(openRegs.length), sub: 'A decorrer neste momento' },
+    ];
+    kpis.forEach(k => {
+      const div = document.createElement('div');
+      div.className = 'kpi' + (k.highlight ? ' highlight' : '');
+      div.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div><div class="sub">${k.sub}</div>`;
+      kpiRow.appendChild(div);
+    });
+
+    const filtered = items.filter(t => {
+      const isPast = t.end < TODAY;
+      if (filters.estado === 'pending' && isPast) return false;
+      if (filters.estado === 'played' && !isPast) return false;
+      if (filters.categoria !== 'all' && !t.categories.includes(filters.categoria)) return false;
+      return true;
+    });
+    document.getElementById('distritaisCount').textContent = `${filtered.length} de ${items.length} provas`;
+    const body = document.getElementById('distritaisBody');
+    body.innerHTML = buildDistritalTable(filtered, next);
+    wireTournamentDateInputs(body);
+
+    const pending = PROVAS_DISTRITAIS_POR_DEFINIR.filter(t => filters.categoria === 'all' || t.categories.includes(filters.categoria));
+    document.getElementById('distritaisPendCount').textContent = `${pending.length} prova${pending.length === 1 ? '' : 's'}`;
+    document.getElementById('distritaisPendBody').innerHTML = pending.length
+      ? buildDistritalPendingTable(pending)
+      : '<table><tbody><tr><td><div class="empty-state"><p>Nenhuma prova por indicar para este filtro.</p></div></td></tr></tbody></table>';
+  }
+
   // ===== FILTER BAR VISIBILITY (some filters don't apply to Torneios Abertos) ==
   function updateFilterBarVisibility() {
     const isTournaments = activeCompId === 'torneios';
-    const isNacionais = activeCompId === 'nacionais';
+    const isNacionais = activeCompId === 'nacionais' || activeCompId === 'distritais';
     ['fVolta', 'fLocal', 'fResultado'].forEach(id => {
       const group = document.getElementById(id).closest('.filter-group');
       group.style.display = (isTournaments || isNacionais) ? 'none' : '';
@@ -1565,12 +1750,19 @@
       updateEditModeUi();
       renderTabs();
       updateFilterBarVisibility();
+      // Esconde todas as vistas antes de mostrar a ativa (evita ficar uma vista antiga visível por baixo).
+      ['combinedContainer', 'singleCompContainer', 'tournamentsContainer', 'nacionaisContainer', 'distritaisContainer', 'marianaContainer'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
       if (activeCompId === 'all') {
         renderCombined();
       } else if (activeCompId === 'torneios') {
         renderTournaments();
       } else if (activeCompId === 'nacionais') {
         renderNacionais();
+      } else if (activeCompId === 'distritais') {
+        renderDistritais();
       } else {
         renderSingle(currentCompetition());
       }
