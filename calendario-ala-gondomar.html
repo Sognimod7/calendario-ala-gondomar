@@ -140,6 +140,9 @@
     color: #fff;
     font-weight: 600;
   }
+  .tab[aria-selected="true"]::before { content: '✓ '; }
+  .tab-hint { font-size: 12px; color: var(--text-muted); margin: -4px 0 14px; }
+  @media print { .tab-hint { display: none !important; } }
   .tab.placeholder {
     border-style: dashed;
     color: var(--text-muted);
@@ -506,6 +509,7 @@
   <div id="editModeBanner" style="display:none;">✏️ Modo de edição ativo — muda data, horário, local ou adversário diretamente nas tabelas. As alterações ficam gravadas e visíveis para quem abrir este link.</div>
 
   <div class="tabs" role="tablist" id="tabRow"></div>
+  <div class="tab-hint" id="tabHint">💡 Podes escolher várias abas ao mesmo tempo para as ver juntas — clica numa aba para a juntar à vista e clica outra vez para a retirar.</div>
 
   <div class="kpis" id="kpiRow"></div>
 
@@ -581,7 +585,7 @@
 
   <!-- Combined view: every competition merged into one chronological list -->
   <div class="volta" id="combinedContainer">
-    <div class="volta-title"><span>Todos os Jogos</span><span class="count" id="allCount"></span></div>
+    <div class="volta-title"><span id="combinedTitle">Todos os Jogos</span><span class="count" id="allCount"></span></div>
     <div class="table-scroll">
       <table>
         <thead>
@@ -962,6 +966,7 @@
     banner.style.display = editMode ? '' : 'none';
   }
 
+  let multiSel = []; // abas escolhidas em simultâneo (quando activeCompId === 'multi')
   let activeCompId = 'all'; // 'all' = combined "Todos os Jogos" view
   const filters = { volta: 'all', local: 'all', estado: 'all', resultado: 'all', regiao: 'all', categoria: 'all', pontuacao: 'all' };
   let tournamentGroupMode = 'data'; // 'data' | 'categoria' — how the Torneios Abertos table is organised
@@ -1267,6 +1272,32 @@
     });
   }
 
+
+  // ===== SELEÇÃO DE ABAS (uma ou várias ao mesmo tempo) =======================
+  // 'all' = todos os jogos; uma só aba = a sua vista própria; várias abas = vista
+  // combinada ('multi') só com as fontes escolhidas. 'mariana' é sempre isolada.
+  function currentSelection() {
+    if (activeCompId === 'multi') return multiSel;
+    if (activeCompId === 'all' || activeCompId === 'mariana') return [];
+    return [activeCompId];
+  }
+  function isTabSelected(id) { return currentSelection().includes(id); }
+  function setSelection(ids) {
+    if (!ids.length) { activeCompId = 'all'; multiSel = []; }
+    else if (ids.length === 1) { activeCompId = ids[0]; multiSel = []; }
+    else { activeCompId = 'multi'; multiSel = ids; }
+  }
+  function toggleTab(id) {
+    if (activeCompId === 'mariana') { setSelection([id]); return; }
+    const cur = currentSelection();
+    setSelection(cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]);
+  }
+  function tabLabel(id) {
+    const c = COMPETITIONS.find(x => x.id === id);
+    if (c) return c.shortLabel;
+    return { torneios: 'Torneios Abertos', nacionais: 'Campeonatos Nacionais', distritais: 'Provas Distritais' }[id] || id;
+  }
+
   // ===== RENDER: TABS =========================================================
   function renderTabs() {
     const tabRow = document.getElementById('tabRow');
@@ -1277,44 +1308,41 @@
     allBtn.setAttribute('role', 'tab');
     allBtn.setAttribute('aria-selected', String(activeCompId === 'all'));
     allBtn.textContent = '📋 Todos os Jogos';
-    allBtn.addEventListener('click', () => { activeCompId = 'all'; renderAll(); });
+    allBtn.addEventListener('click', () => { setSelection([]); renderAll(); });
     tabRow.appendChild(allBtn);
 
     COMPETITIONS.forEach(c => {
       const btn = document.createElement('button');
       btn.className = 'tab';
       btn.setAttribute('role', 'tab');
-      btn.setAttribute('aria-selected', String(c.id === activeCompId));
+      btn.setAttribute('aria-selected', String(isTabSelected(c.id)));
       btn.textContent = c.label;
-      btn.addEventListener('click', () => {
-        activeCompId = c.id;
-        renderAll();
-      });
+      btn.addEventListener('click', () => { toggleTab(c.id); renderAll(); });
       tabRow.appendChild(btn);
     });
 
     const tournBtn = document.createElement('button');
     tournBtn.className = 'tab';
     tournBtn.setAttribute('role', 'tab');
-    tournBtn.setAttribute('aria-selected', String(activeCompId === 'torneios'));
+    tournBtn.setAttribute('aria-selected', String(isTabSelected('torneios')));
     tournBtn.textContent = '🏆 Torneios Abertos';
-    tournBtn.addEventListener('click', () => { activeCompId = 'torneios'; renderAll(); });
+    tournBtn.addEventListener('click', () => { toggleTab('torneios'); renderAll(); });
     tabRow.appendChild(tournBtn);
 
     const nacBtn = document.createElement('button');
     nacBtn.className = 'tab';
     nacBtn.setAttribute('role', 'tab');
-    nacBtn.setAttribute('aria-selected', String(activeCompId === 'nacionais'));
+    nacBtn.setAttribute('aria-selected', String(isTabSelected('nacionais')));
     nacBtn.textContent = '🏅 Campeonatos Nacionais';
-    nacBtn.addEventListener('click', () => { activeCompId = 'nacionais'; renderAll(); });
+    nacBtn.addEventListener('click', () => { toggleTab('nacionais'); renderAll(); });
     tabRow.appendChild(nacBtn);
 
     const distBtn = document.createElement('button');
     distBtn.className = 'tab';
     distBtn.setAttribute('role', 'tab');
-    distBtn.setAttribute('aria-selected', String(activeCompId === 'distritais'));
+    distBtn.setAttribute('aria-selected', String(isTabSelected('distritais')));
     distBtn.textContent = '🏛️ Provas Distritais';
-    distBtn.addEventListener('click', () => { activeCompId = 'distritais'; renderAll(); });
+    distBtn.addEventListener('click', () => { toggleTab('distritais'); renderAll(); });
     tabRow.appendChild(distBtn);
 
     PLACEHOLDER_TABS.forEach(p => {
@@ -1329,30 +1357,35 @@
   }
 
   // ===== RENDER: COMBINED VIEW ("Todos os Jogos") =============================
-  function renderCombined() {
+  function renderCombined(sel) {
     document.getElementById('combinedContainer').style.display = '';
     document.getElementById('singleCompContainer').style.display = 'none';
     document.getElementById('tournamentsContainer').style.display = 'none';
     document.getElementById('nacionaisContainer').style.display = 'none';
     const compNames = COMPETITIONS.map(c => c.shortLabel).join(' + ');
-    document.getElementById('compSubtitle').textContent = `Todas as competições, Torneios Abertos e Campeonatos Nacionais carregados (${compNames} + Torneios + CN) · 2026/2027`;
+    document.getElementById('compSubtitle').textContent = sel
+      ? `Seleção: ${sel.map(tabLabel).join(' + ')} · 2026/2027`
+      : `Todas as competições, Torneios Abertos e Campeonatos Nacionais carregados (${compNames} + Torneios + CN) · 2026/2027`;
+    document.getElementById('combinedTitle').textContent = sel ? 'Abas selecionadas' : 'Todos os Jogos';
 
-    const matches = allAugmentedMatches().sort((a,b) => a.date.localeCompare(b.date));
+    const matches = allAugmentedMatches().filter(m => !sel || sel.includes(m._compId)).sort((a,b) => a.date.localeCompare(b.date));
     currentScopeMatches = matches;
     const nextMatch = matches.find(m => m.date >= TODAY) || null;
 
-    renderKpis(matches, nextMatch, `${COMPETITIONS.length} competições carregadas`, 'Jogos totais');
+    renderKpis(matches, nextMatch, sel ? `${sel.filter(id => COMPETITIONS.some(c => c.id === id)).length} competições selecionadas` : `${COMPETITIONS.length} competições carregadas`, 'Jogos totais');
 
     // Junta jogos de equipa, torneios abertos e campeonatos nacionais numa só
     // lista ordenada por data, para se ver de imediato se algum jogo calha no
     // mesmo dia de um torneio/campeonato (jogos nessa situação ficam com o
     // selo 🏆 e destacados a amarelo).
+    const kindTab = { tournament: 'torneios', nacional: 'nacionais', distrital: 'distritais' };
+    const inSel = e => !sel || e._kind === 'match' || sel.includes(kindTab[e._kind]);
     const events = [
       ...matches.map(m => ({ ...m, _kind: 'match' })),
       ...effectiveTournaments(TOURNAMENTS).map(t => ({ ...t, _kind: 'tournament', date: t.start })),
       ...effectiveTournaments(CAMPEONATOS_NACIONAIS).map(t => ({ ...t, _kind: 'nacional', date: t.start })),
       ...effectiveTournaments(PROVAS_DISTRITAIS).map(t => ({ ...t, _kind: 'distrital', date: t.start })),
-    ].sort((a, b) => a.date.localeCompare(b.date));
+    ].filter(inSel).sort((a, b) => a.date.localeCompare(b.date));
 
     const rows = events.filter(passesFilterEvent);
     document.getElementById('allCount').textContent = `${rows.length} de ${events.length} eventos (jogos + torneios + campeonatos)`;
@@ -1785,6 +1818,8 @@
       });
       if (activeCompId === 'all') {
         renderCombined();
+      } else if (activeCompId === 'multi') {
+        renderCombined(multiSel);
       } else if (activeCompId === 'torneios') {
         renderTournaments();
       } else if (activeCompId === 'nacionais') {
