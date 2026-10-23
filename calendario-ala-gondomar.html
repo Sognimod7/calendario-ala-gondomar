@@ -728,11 +728,30 @@
     { jornada: 1, volta: 1, date: '2026-10-03', home: true, opponent: "SC Povoense", time: '15:00', encontro: 'TP1E001', round: 'Pré-Eliminatória' },
   ];
 
+  // Campeonato Distrital de Equipas Seniores Masculinos 2026/2027 — 2ª Divisão,
+  // Série A (ATMP). Só os jogos do Ala Nun'Álvares; nas jornadas 6 e 13 a equipa
+  // está isenta (folga). O horário não consta do calendário da associação.
+  const CDE_2A_MATCHES = [
+    { jornada: 1,  volta: 1, date: '2026-10-30', home: true,  opponent: "ARCD Vila Verde",          time: 'A indicar', encontro: 'CDE2A-J01' },
+    { jornada: 2,  volta: 1, date: '2026-11-06', home: false, opponent: "Leões da Lapa FC B",       time: 'A indicar', encontro: 'CDE2A-J02' },
+    { jornada: 3,  volta: 1, date: '2026-11-13', home: true,  opponent: "ARC Sobrão B",             time: 'A indicar', encontro: 'CDE2A-J03' },
+    { jornada: 4,  volta: 1, date: '2026-11-20', home: false, opponent: "Douro Mais Solidário",     time: 'A indicar', encontro: 'CDE2A-J04' },
+    { jornada: 5,  volta: 1, date: '2026-11-27', home: true,  opponent: "AR Canidelo C",            time: 'A indicar', encontro: 'CDE2A-J05' },
+    { jornada: 7,  volta: 1, date: '2026-12-11', home: false, opponent: "GD Ferroviários Campanhã", time: 'A indicar', encontro: 'CDE2A-J07' },
+    { jornada: 8,  volta: 2, date: '2027-01-08', home: false, opponent: "ARCD Vila Verde",          time: 'A indicar', encontro: 'CDE2A-J08' },
+    { jornada: 9,  volta: 2, date: '2027-01-15', home: true,  opponent: "Leões da Lapa FC B",       time: 'A indicar', encontro: 'CDE2A-J09' },
+    { jornada: 10, volta: 2, date: '2027-01-22', home: false, opponent: "ARC Sobrão B",             time: 'A indicar', encontro: 'CDE2A-J10' },
+    { jornada: 11, volta: 2, date: '2027-01-29', home: true,  opponent: "Douro Mais Solidário",     time: 'A indicar', encontro: 'CDE2A-J11' },
+    { jornada: 12, volta: 2, date: '2027-02-05', home: false, opponent: "AR Canidelo C",            time: 'A indicar', encontro: 'CDE2A-J12' },
+    { jornada: 14, volta: 2, date: '2027-02-19', home: true,  opponent: "GD Ferroviários Campanhã", time: 'A indicar', encontro: 'CDE2A-J14' },
+  ];
+
   const COMPETITIONS = [
     { id: 'campeonato-masc', label: "Campeonato Masc. — Zona Centro Norte", shortLabel: 'Masc.', subtitle: "2ª Divisão Seniores Masculinos — Zona Centro Norte · 2026/2027", matches: CAMPEONATO_MASC_MATCHES },
     { id: 'divisao-fem',     label: "1ª Divisão Seniores Femininos",         shortLabel: 'Fem.',  subtitle: "1ª Divisão Seniores Femininos · 2026/2027",                        matches: DIVISAO_FEM_MATCHES },
     { id: 'divisao-fem2',    label: "2ª Divisão Seniores Fem. B — Zona Cont. e Açores 1", shortLabel: 'Fem. B', subtitle: "2ª Divisão Seniores Femininos (equipa B) — Zona Continente e Açores 1 · 2026/2027", matches: DIVISAO_FEM2_MATCHES },
     { id: 'taca', label: "Taça de Portugal — 1ª Eliminatória", shortLabel: 'Taça', subtitle: "Taça de Portugal · 1ª Eliminatória · Zona Centro Norte · 2026/2027", matches: TACA_MATCHES },
+    { id: 'cde-2a', label: "Distrital Equipas Masc. — 2ª Div. Série A", shortLabel: 'CDE 2ª A', subtitle: "Campeonato Distrital de Equipas Seniores Masculinos — 2ª Divisão Série A · ATMP · 2026/2027 (isento nas jornadas 6 e 13)", matches: CDE_2A_MATCHES },
   ];
 
   // Torneios Abertos FPTM 2026/2027 — provas de inscrição individual, sem
@@ -799,7 +818,6 @@
     { name: "Distrital Individual · Seniores",                       categories: ['Seniores'],                      start: '2027-02-06', end: '2027-02-06', venue: 'Paredes',                         openReg: '2026-12-29', closeReg: '2027-01-24', draw: '2027-01-28' },
     { name: "Distrital Individual · Veteranos",                      categories: ['Veteranos'],                     start: '2027-02-07', end: '2027-02-07', venue: 'Paredes',                         openReg: '2026-12-29', closeReg: '2027-01-24', draw: '2027-01-28' },
     { name: "Torneio Cidade do Porto · S9, S13, S15 e S17",          categories: ['Sub9','Sub13','Sub15','Sub17'],  start: '2027-02-20', end: '2027-02-21', venue: 'Porto',                           openReg: null,         closeReg: null,         draw: null },
-    { name: "Distrital Equipas · Seniores Masculinos 1ª e 2ª Divisão", categories: ['Seniores'],                    start: '2026-10-30', end: '2026-10-30', venue: 'Salas dos clubes',                openReg: '2026-09-16', closeReg: '2026-10-08', draw: '2026-10-15', note: 'Início da prova (30 de outubro)' },
   ];
 
   // Provas distritais cuja data ainda não foi divulgada ("A indicar") — só são
