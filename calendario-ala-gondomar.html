@@ -295,6 +295,10 @@
   }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr.next-row { background: var(--highlight-bg); }
+  tbody tr.match-cancelled td { opacity: .6; }
+  tbody tr.match-cancelled .opp-name, tbody tr.match-cancelled .time-cell, tbody tr.match-cancelled .date-cell { text-decoration: line-through; }
+  .cancel-pill { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:600; background: color-mix(in srgb, var(--status-critical) 16%, transparent); color: var(--status-critical); white-space:nowrap; text-decoration:none; }
+  tbody tr.match-cancelled .cancel-pill { opacity:1; }
   tbody tr.tournament-combined-row { background: color-mix(in srgb, var(--series-2) 8%, transparent); }
   tbody tr.tournament-combined-row:hover { background: color-mix(in srgb, var(--series-2) 16%, transparent); }
   tbody tr.date-conflict-row { background: color-mix(in srgb, var(--series-2) 16%, transparent); }
@@ -676,7 +680,8 @@
   // ===== DATA MODEL =========================================================
   // Add new competitions here as new entries in COMPETITIONS — they show up
   // both as their own tab AND merged into the "Todos os Jogos" combined tab.
-  // Each match: { jornada, volta (1|2), date:'YYYY-MM-DD', home:bool, opponent, time, encontro }
+  // Each match: { jornada, volta (1|2), date:'YYYY-MM-DD', home:bool, opponent, time, encontro, cancelled? }
+  // cancelled:true = jogo anulado (ex.: adversário despromovido) — fica visível mas riscado e fora das contagens.
   const TODAY = new Date().toISOString().slice(0, 10); // data de hoje, calculada sempre que a página é aberta
 
   const CAMPEONATO_MASC_MATCHES = [
@@ -703,7 +708,7 @@
   const DIVISAO_FEM_MATCHES = [
     { jornada: 1,  volta: 1, date: '2026-10-03', home: false, opponent: "CP Alvito",              time: '15:00', encontro: '1F003' },
     { jornada: 2,  volta: 1, date: '2026-10-04', home: false, opponent: "CTM Mirandela",          time: '11:00', encontro: '1F008' },
-    { jornada: 3,  volta: 1, date: '2026-11-14', home: true,  opponent: "ADC Ponta do Pargo",     time: '16:00', encontro: '1F011' },
+    { jornada: 3,  volta: 1, date: '2026-11-14', home: true,  opponent: "ADC Ponta do Pargo",     time: '16:00', encontro: '1F011', cancelled: true },
     { jornada: 4,  volta: 1, date: '2026-11-15', home: true,  opponent: "CTM Ponta do Sol",       time: '11:00', encontro: '1F015' },
     { jornada: 5,  volta: 1, date: '2026-11-21', home: true,  opponent: "GDCS Juncal",            time: '16:00', encontro: '1F017' },
     { jornada: 6,  volta: 1, date: '2026-11-22', home: true,  opponent: "U Sebastianense FC",     time: '11:00', encontro: '1F021' },
@@ -711,7 +716,7 @@
     { jornada: 8,  volta: 2, date: '2027-01-16', home: true,  opponent: "CTM Mirandela",          time: '16:00', encontro: '1F031' },
     { jornada: 9,  volta: 2, date: '2027-01-17', home: true,  opponent: "CP Alvito",              time: '11:00', encontro: '1F035' },
     { jornada: 10, volta: 2, date: '2027-02-06', home: false, opponent: "CTM Ponta do Sol",       time: '16:00', encontro: '1F040' },
-    { jornada: 11, volta: 2, date: '2027-02-07', home: false, opponent: "ADC Ponta do Pargo",     time: '11:00', encontro: '1F043' },
+    { jornada: 11, volta: 2, date: '2027-02-07', home: false, opponent: "ADC Ponta do Pargo",     time: '11:00', encontro: '1F043', cancelled: true },
     { jornada: 12, volta: 2, date: '2027-02-13', home: false, opponent: "U Sebastianense FC",     time: '15:00', encontro: '1F046' },
     { jornada: 13, volta: 2, date: '2027-02-14', home: false, opponent: "GDCS Juncal",            time: '11:00', encontro: '1F049' },
     { jornada: 14, volta: 2, date: '2027-02-20', home: true,  opponent: "Sporting CP",            time: '16:00', encontro: '1F054' },
@@ -1085,7 +1090,7 @@
     const outcome = outcomeOf(r);
     const tr = document.createElement('tr');
     const conflictTourns = opts.combined ? tournamentsOnDate(m.date) : [];
-    tr.className = [isNext ? 'next-row' : '', conflictTourns.length ? 'date-conflict-row' : ''].filter(Boolean).join(' ');
+    tr.className = [isNext ? 'next-row' : '', conflictTourns.length ? 'date-conflict-row' : '', m.cancelled ? 'match-cancelled' : ''].filter(Boolean).join(' ');
 
     const nextPill = isNext ? '<span class="next-pill">Próximo</span>' : '';
     const conflictBadge = conflictTourns.length
@@ -1104,7 +1109,7 @@
     } else {
       dateCell = `<td data-label="Data" class="date-cell">${fmtDate(m.date)}${conflictBadge}</td>`;
       localCell = `<td data-label="Local">${m.home ? '<span class="badge casa">🏠 Casa</span>' : '<span class="badge fora">✈️ Fora</span>'}</td>`;
-      oppCell = `<td data-label="Adversário">${m.opponent}</td>`;
+      oppCell = `<td data-label="Adversário"><span class="opp-name">${m.opponent}</span>${m.cancelled ? ' <span class="cancel-pill">Anulado · despromovido</span>' : ''}</td>`;
       timeCell = `<td data-label="Horário" class="time-cell">${m.time}</td>`;
     }
     const resultCell = `<td data-label="Nosso resultado">
@@ -1255,6 +1260,7 @@
 
   // ===== KPIs ==================================================================
   function renderKpis(matches, nextMatch, totalLabel, totalTitle) {
+    matches = matches.filter(m => !m.cancelled);
     const homeCount = matches.filter(m => m.home).length;
     const awayCount = matches.filter(m => !m.home).length;
     const { wins, draws, losses } = computeRecordGeneric(matches);
@@ -1380,7 +1386,7 @@
 
     const matches = allAugmentedMatches().filter(m => !sel || sel.includes(m._compId)).sort((a,b) => a.date.localeCompare(b.date));
     currentScopeMatches = matches;
-    const nextMatch = matches.find(m => m.date >= TODAY) || null;
+    const nextMatch = matches.find(m => m.date >= TODAY && !m.cancelled) || null;
 
     renderKpis(matches, nextMatch, sel ? `${sel.filter(id => COMPETITIONS.some(c => c.id === id)).length} competições selecionadas` : `${COMPETITIONS.length} competições carregadas`, 'Jogos totais');
 
@@ -1421,7 +1427,7 @@
 
     const matches = buildAugmentedMatches(competition).sort((a,b) => a.date.localeCompare(b.date));
     currentScopeMatches = matches;
-    const nextMatch = matches.find(m => m.date >= TODAY) || null;
+    const nextMatch = matches.find(m => m.date >= TODAY && !m.cancelled) || null;
 
     renderKpis(matches, nextMatch, '1ª + 2ª volta', 'Jornadas totais');
 
