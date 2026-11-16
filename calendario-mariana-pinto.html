@@ -297,7 +297,13 @@
     vertical-align: middle;
   }
   tbody tr:last-child td { border-bottom: none; }
+  .enroll-chk { font-size:12px; font-weight:600; margin-left:6px; white-space:nowrap; cursor:pointer; }
+  .enroll-pill { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; background: color-mix(in srgb, var(--status-good) 16%, transparent); color:var(--status-good); white-space:nowrap; }
+  .past-toggle-row { display:flex; gap:18px; flex-wrap:wrap; }
   tbody tr.next-row { background: var(--highlight-bg); }
+  tbody tr.match-cancelled td { opacity: .6; }
+  tbody tr.match-cancelled .opp-name, tbody tr.match-cancelled .time-cell, tbody tr.match-cancelled .date-cell { text-decoration: line-through; }
+  .cancel-pill { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:600; background: color-mix(in srgb, var(--status-critical) 16%, transparent); color: var(--status-critical); white-space:nowrap; text-decoration:none; }
   tbody tr.tournament-combined-row { background: color-mix(in srgb, var(--series-2) 8%, transparent); }
   tbody tr.tournament-combined-row:hover { background: color-mix(in srgb, var(--series-2) 16%, transparent); }
   tbody tr.date-conflict-row { background: color-mix(in srgb, var(--series-2) 16%, transparent); }
@@ -597,7 +603,8 @@
 
   <div class="tabs" role="tablist" id="tabRow"></div>
   <div class="tab-hint" id="tabHint">💡 Podes escolher várias abas ao mesmo tempo para as ver juntas — clica numa aba para a juntar à vista e clica outra vez para a retirar.</div>
-  <div class="past-toggle-row"><label class="past-toggle"><input type="checkbox" id="hidePastChk"> Ocultar o que já passou (jogos e provas com data anterior a hoje)</label></div>
+  <div class="past-toggle-row"><label class="past-toggle"><input type="checkbox" id="hidePastChk"> Ocultar o que já passou (jogos e provas com data anterior a hoje)</label>
+    <label class="past-toggle"><input type="checkbox" id="onlyEnrolledChk"> Só torneios onde estamos inscritos (esconde os outros)</label></div>
 
   <div class="kpis" id="kpiRow"></div>
 
@@ -776,7 +783,8 @@
   // ===== DATA MODEL =========================================================
   // Add new competitions here as new entries in COMPETITIONS — they show up
   // both as their own tab AND merged into the "Todos os Jogos" combined tab.
-  // Each match: { jornada, volta (1|2), date:'YYYY-MM-DD', home:bool, opponent, time, encontro }
+  // Each match: { jornada, volta (1|2), date:'YYYY-MM-DD', home:bool, opponent, time, encontro, cancelled? }
+  // cancelled:true = jogo anulado (ex.: adversário despromovido) — fica visível mas riscado e fora das contagens.
   const TODAY = new Date().toISOString().slice(0, 10); // data de hoje, calculada sempre que a página é aberta
 
   const CAMPEONATO_MASC_MATCHES = [
@@ -784,7 +792,7 @@
     { jornada: 2,  volta: 1, date: '2026-10-17', home: false, opponent: "ACR Saavedra Guedes",      time: '15:00', encontro: '2MCN006' },
     { jornada: 3,  volta: 1, date: '2026-10-31', home: false, opponent: "NCR Valongo B",            time: '15:00', encontro: '2MCN015' },
     { jornada: 4,  volta: 1, date: '2026-11-14', home: true,  opponent: "CCR Valega",               time: '16:00', encontro: '2MCN017' },
-    { jornada: 5,  volta: 1, date: '2026-11-28', home: false, opponent: "CTM Lousada",              time: '15:00', encontro: '2MCN024' },
+    { jornada: 5,  volta: 1, date: '2026-11-21', home: false, opponent: "CTM Lousada",              time: '15:00', encontro: '2MCN024' },
     { jornada: 6,  volta: 1, date: '2026-12-05', home: true,  opponent: "LFC Lourosa",              time: '16:00', encontro: '2MCN028' },
     { jornada: 7,  volta: 1, date: '2026-12-12', home: false, opponent: "ARC Ponte Nova",           time: '15:00', encontro: '2MCN033' },
     { jornada: 8,  volta: 1, date: '2027-01-09', home: true,  opponent: "C Campismo SJ Madeira",    time: '16:00', encontro: '2MCN039' },
@@ -803,7 +811,7 @@
   const DIVISAO_FEM_MATCHES = [
     { jornada: 1,  volta: 1, date: '2026-10-03', home: false, opponent: "CP Alvito",              time: '15:00', encontro: '1F003' },
     { jornada: 2,  volta: 1, date: '2026-10-04', home: false, opponent: "CTM Mirandela",          time: '11:00', encontro: '1F008' },
-    { jornada: 3,  volta: 1, date: '2026-11-14', home: true,  opponent: "ADC Ponta do Pargo",     time: '16:00', encontro: '1F011' },
+    { jornada: 3,  volta: 1, date: '2026-11-14', home: true,  opponent: "ADC Ponta do Pargo",     time: '16:00', encontro: '1F011', cancelled: true },
     { jornada: 4,  volta: 1, date: '2026-11-15', home: true,  opponent: "CTM Ponta do Sol",       time: '11:00', encontro: '1F015' },
     { jornada: 5,  volta: 1, date: '2026-11-21', home: true,  opponent: "GDCS Juncal",            time: '16:00', encontro: '1F017' },
     { jornada: 6,  volta: 1, date: '2026-11-22', home: true,  opponent: "U Sebastianense FC",     time: '11:00', encontro: '1F021' },
@@ -811,7 +819,7 @@
     { jornada: 8,  volta: 2, date: '2027-01-16', home: true,  opponent: "CTM Mirandela",          time: '16:00', encontro: '1F031' },
     { jornada: 9,  volta: 2, date: '2027-01-17', home: true,  opponent: "CP Alvito",              time: '11:00', encontro: '1F035' },
     { jornada: 10, volta: 2, date: '2027-02-06', home: false, opponent: "CTM Ponta do Sol",       time: '16:00', encontro: '1F040' },
-    { jornada: 11, volta: 2, date: '2027-02-07', home: false, opponent: "ADC Ponta do Pargo",     time: '11:00', encontro: '1F043' },
+    { jornada: 11, volta: 2, date: '2027-02-07', home: false, opponent: "ADC Ponta do Pargo",     time: '11:00', encontro: '1F043', cancelled: true },
     { jornada: 12, volta: 2, date: '2027-02-13', home: false, opponent: "U Sebastianense FC",     time: '15:00', encontro: '1F046' },
     { jornada: 13, volta: 2, date: '2027-02-14', home: false, opponent: "GDCS Juncal",            time: '11:00', encontro: '1F049' },
     { jornada: 14, volta: 2, date: '2027-02-20', home: true,  opponent: "Sporting CP",            time: '16:00', encontro: '1F054' },
@@ -821,13 +829,13 @@
     { jornada: 1,  volta: 1, date: '2026-11-07', home: true,  opponent: "CTM Mirandela B",       time: '10:00', encontro: '2FCA1003' },
     { jornada: 2,  volta: 1, date: '2026-11-07', home: true,  opponent: "CCR Arrabães",          time: '17:00', encontro: '2FCA1007' },
     { jornada: 3,  volta: 1, date: '2026-11-21', home: false, opponent: "AR Canidelense",        time: '10:00', encontro: '2FCA1009' },
-    { jornada: 4,  volta: 1, date: '2026-11-21', home: false, opponent: "CA Madalena",           time: '17:00', encontro: '2FCA1014' },
+    { jornada: 4,  volta: 1, date: '2026-11-21', home: true,  opponent: "CA Madalena",           time: '17:00', encontro: '2FCA1014' },
     { jornada: 5,  volta: 1, date: '2026-12-05', home: false, opponent: "Real Cerveirense 1321", time: '10:00', encontro: '2FCA1019' },
     { jornada: 6,  volta: 1, date: '2026-12-05', home: false, opponent: "CDC Navais",            time: '17:00', encontro: '2FCA1024' },
     { jornada: 7,  volta: 1, date: '2027-01-16', home: false, opponent: "AR Novelense",          time: '15:00', encontro: '2FCA1027' },
     { jornada: 8,  volta: 2, date: '2027-02-06', home: false, opponent: "CCR Arrabães",          time: '10:00', encontro: '2FCA1032' },
     { jornada: 9,  volta: 2, date: '2027-02-06', home: false, opponent: "CTM Mirandela B",       time: '17:00', encontro: '2FCA1035' },
-    { jornada: 10, volta: 2, date: '2027-02-20', home: true,  opponent: "CA Madalena",           time: '10:00', encontro: '2FCA1037' },
+    { jornada: 10, volta: 2, date: '2027-02-20', home: false, opponent: "CA Madalena",           time: '10:00', encontro: '2FCA1037' },
     { jornada: 11, volta: 2, date: '2027-02-20', home: true,  opponent: "AR Canidelense",        time: '17:00', encontro: '2FCA1041' },
     { jornada: 12, volta: 2, date: '2027-03-13', home: true,  opponent: "CDC Navais",            time: '10:00', encontro: '2FCA1047' },
     { jornada: 13, volta: 2, date: '2027-03-13', home: true,  opponent: "Real Cerveirense 1321", time: '17:00', encontro: '2FCA1051' },
@@ -840,20 +848,20 @@
 
   // Campeonato Distrital de Equipas Seniores Masculinos 2026/2027 — 2ª Divisão,
   // Série A (ATMP). Só os jogos do Ala Nun'Álvares; nas jornadas 6 e 13 a equipa
-  // está isenta (folga). O horário não consta do calendário da associação.
+  // está isenta (folga). Todos os jogos têm início às 21:00.
   const CDE_2A_MATCHES = [
-    { jornada: 1,  volta: 1, date: '2026-10-30', home: true,  opponent: "ARCD Vila Verde",          time: 'A indicar', encontro: 'CDE2A-J01' },
-    { jornada: 2,  volta: 1, date: '2026-11-06', home: false, opponent: "Leões da Lapa FC B",       time: 'A indicar', encontro: 'CDE2A-J02' },
-    { jornada: 3,  volta: 1, date: '2026-11-13', home: true,  opponent: "ARC Sobrão B",             time: 'A indicar', encontro: 'CDE2A-J03' },
-    { jornada: 4,  volta: 1, date: '2026-11-20', home: false, opponent: "Douro Mais Solidário",     time: 'A indicar', encontro: 'CDE2A-J04' },
-    { jornada: 5,  volta: 1, date: '2026-11-27', home: true,  opponent: "AR Canidelo C",            time: 'A indicar', encontro: 'CDE2A-J05' },
-    { jornada: 7,  volta: 1, date: '2026-12-11', home: false, opponent: "GD Ferroviários Campanhã", time: 'A indicar', encontro: 'CDE2A-J07' },
-    { jornada: 8,  volta: 2, date: '2027-01-08', home: false, opponent: "ARCD Vila Verde",          time: 'A indicar', encontro: 'CDE2A-J08' },
-    { jornada: 9,  volta: 2, date: '2027-01-15', home: true,  opponent: "Leões da Lapa FC B",       time: 'A indicar', encontro: 'CDE2A-J09' },
-    { jornada: 10, volta: 2, date: '2027-01-22', home: false, opponent: "ARC Sobrão B",             time: 'A indicar', encontro: 'CDE2A-J10' },
-    { jornada: 11, volta: 2, date: '2027-01-29', home: true,  opponent: "Douro Mais Solidário",     time: 'A indicar', encontro: 'CDE2A-J11' },
-    { jornada: 12, volta: 2, date: '2027-02-05', home: false, opponent: "AR Canidelo C",            time: 'A indicar', encontro: 'CDE2A-J12' },
-    { jornada: 14, volta: 2, date: '2027-02-19', home: true,  opponent: "GD Ferroviários Campanhã", time: 'A indicar', encontro: 'CDE2A-J14' },
+    { jornada: 1,  volta: 1, date: '2026-10-30', home: true,  opponent: "ARCD Vila Verde",          time: '21:00', encontro: 'CDE2A-J01' },
+    { jornada: 2,  volta: 1, date: '2026-11-06', home: false, opponent: "Leões da Lapa FC B",       time: '21:00', encontro: 'CDE2A-J02' },
+    { jornada: 3,  volta: 1, date: '2026-11-13', home: true,  opponent: "ARC Sobrão B",             time: '21:00', encontro: 'CDE2A-J03' },
+    { jornada: 4,  volta: 1, date: '2026-11-20', home: false, opponent: "Douro Mais Solidário",     time: '21:00', encontro: 'CDE2A-J04' },
+    { jornada: 5,  volta: 1, date: '2026-11-27', home: true,  opponent: "AR Canidelo C",            time: '21:00', encontro: 'CDE2A-J05' },
+    { jornada: 7,  volta: 1, date: '2026-12-11', home: false, opponent: "GD Ferroviários Campanhã", time: '21:00', encontro: 'CDE2A-J07' },
+    { jornada: 8,  volta: 2, date: '2027-01-08', home: false, opponent: "ARCD Vila Verde",          time: '21:00', encontro: 'CDE2A-J08' },
+    { jornada: 9,  volta: 2, date: '2027-01-15', home: true,  opponent: "Leões da Lapa FC B",       time: '21:00', encontro: 'CDE2A-J09' },
+    { jornada: 10, volta: 2, date: '2027-01-22', home: false, opponent: "ARC Sobrão B",             time: '21:00', encontro: 'CDE2A-J10' },
+    { jornada: 11, volta: 2, date: '2027-01-29', home: true,  opponent: "Douro Mais Solidário",     time: '21:00', encontro: 'CDE2A-J11' },
+    { jornada: 12, volta: 2, date: '2027-02-05', home: false, opponent: "AR Canidelo C",            time: '21:00', encontro: 'CDE2A-J12' },
+    { jornada: 14, volta: 2, date: '2027-02-19', home: true,  opponent: "GD Ferroviários Campanhã", time: '21:00', encontro: 'CDE2A-J14' },
   ];
 
   const COMPETITIONS = [
@@ -955,12 +963,31 @@
   // Edições manuais às datas dos torneios abertos e campeonatos nacionais,
   // keyed pelo nome (tournamentKey). Ex: { start: '2027-03-13', end: '2027-03-14' }.
   const tournamentEdits = {};
+  // Torneios/provas em que o clube está inscrito, keyed pelo nome: { 'Nome': true }.
+  const enrolled = {};
+  let onlyEnrolled = false;
+  try { onlyEnrolled = localStorage.getItem('so-inscritos') === '1'; } catch (e) {}
   function tournamentKey(t) { return t.name; }
   function effectiveTournament(t) {
-    const edit = tournamentEdits[tournamentKey(t)];
-    return edit ? { ...t, ...edit } : t;
+    const key = tournamentKey(t);
+    const edit = tournamentEdits[key];
+    return { ...t, ...(edit || {}), enrolled: !!enrolled[key] };
   }
-  function effectiveTournaments(list) { return list.map(effectiveTournament); }
+  // Com "só inscritos" ligado, os torneios sem inscrição desaparecem (exceto em modo de edição, para se poder marcar).
+  function effectiveTournaments(list) { return list.map(effectiveTournament).filter(t => !onlyEnrolled || editMode || t.enrolled); }
+  function enrollHtml(t) {
+    const key = tournamentKey(t);
+    if (editMode) return ` <label class="enroll-chk"><input type="checkbox" class="edit-input edit-enroll" data-enroll-key="${escapeAttr(key)}"${enrolled[key] ? ' checked' : ''}> Inscritos</label>`;
+    return enrolled[key] ? ' <span class="enroll-pill">✔ Inscritos</span>' : '';
+  }
+  document.addEventListener('change', ev => {
+    const c = ev.target.closest && ev.target.closest('.edit-enroll');
+    if (!c) return;
+    const key = c.dataset.enrollKey;
+    if (c.checked) enrolled[key] = true; else delete enrolled[key];
+    persistState();
+    renderAll();
+  });
 
   // ===== SHARED PERSISTENCE (Firebase Realtime Database) ======================
   // This page runs as its own website (not inside a Claude artifact sandbox),
@@ -982,11 +1009,12 @@
       if (parsed && parsed.marianaSelections) Object.assign(marianaSelections, parsed.marianaSelections);
       if (parsed && parsed.matchEdits) Object.assign(matchEdits, parsed.matchEdits);
       if (parsed && parsed.tournamentEdits) Object.assign(tournamentEdits, parsed.tournamentEdits);
+      if (parsed && parsed.enrolled) Object.assign(enrolled, parsed.enrolled);
     } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
   }
   function saveLocalCache() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, enrolled }));
     } catch (e) { /* ignora */ }
   }
 
@@ -1004,7 +1032,7 @@
   }
   async function pushRemoteState() {
     try {
-      const payload = JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits });
+      const payload = JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, enrolled });
       await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}.json`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1031,10 +1059,12 @@
       Object.keys(marianaSelections).forEach(k => delete marianaSelections[k]);
       Object.keys(matchEdits).forEach(k => delete matchEdits[k]);
       Object.keys(tournamentEdits).forEach(k => delete tournamentEdits[k]);
+      Object.keys(enrolled).forEach(k => delete enrolled[k]);
       if (remote.results) Object.assign(results, remote.results);
       if (remote.marianaSelections) Object.assign(marianaSelections, remote.marianaSelections);
       if (remote.matchEdits) Object.assign(matchEdits, remote.matchEdits);
       if (remote.tournamentEdits) Object.assign(tournamentEdits, remote.tournamentEdits);
+      if (remote.enrolled) Object.assign(enrolled, remote.enrolled);
       saveLocalCache();
       if (rerender) renderAll();
     }
@@ -1196,6 +1226,7 @@
     if (isNext) rowClasses.push('next-row');
     if (marianaOn) rowClasses.push('mariana-row');
     if (conflictTourns.length) rowClasses.push('date-conflict-row');
+    if (m.cancelled) rowClasses.push('match-cancelled');
     if (rowClasses.length) tr.className = rowClasses.join(' ');
 
     const nextPill = isNext ? '<span class="next-pill">Próximo</span>' : '';
@@ -1215,7 +1246,7 @@
     } else {
       dateCell = `<td data-label="Data" class="date-cell">${fmtDate(m.date)}${conflictBadge}</td>`;
       localCell = `<td data-label="Local">${m.home ? '<span class="badge casa">🏠 Casa</span>' : '<span class="badge fora">✈️ Fora</span>'}</td>`;
-      oppCell = `<td data-label="Adversário">${m.opponent}</td>`;
+      oppCell = `<td data-label="Adversário"><span class="opp-name">${m.opponent}</span>${m.cancelled ? ' <span class="cancel-pill">Anulado · despromovido</span>' : ''}</td>`;
       timeCell = `<td data-label="Horário" class="time-cell">${m.time}</td>`;
     }
     const resultCell = `<td data-label="Nosso resultado">
@@ -1301,7 +1332,7 @@
     tr.innerHTML = `
       ${dateCell}
       <td data-label="Competição"><span class="comp-badge tourn-badge">${badge}</span></td>
-      <td data-label="Jornada"><span class="jornada-combined">${t.name}</span>${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
+      <td data-label="Jornada"><span class="jornada-combined">${t.name}</span>${enrollHtml(t)}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
       <td data-label="Nº Encontro">—</td>
       <td data-label="Local">${localCell}</td>
       <td data-label="Adversário"><strong>${t.categories.join(', ')}</strong></td>
@@ -1402,6 +1433,7 @@
 
   // ===== KPIs ==================================================================
   function renderKpis(matches, nextMatch, totalLabel, totalTitle) {
+    matches = matches.filter(m => !m.cancelled);
     const homeCount = matches.filter(m => m.home).length;
     const awayCount = matches.filter(m => !m.home).length;
     const { wins, draws, losses } = computeRecordGeneric(matches);
@@ -1535,7 +1567,7 @@
 
     const matches = allAugmentedMatches().filter(m => !sel || sel.includes(m._compId)).sort((a,b) => a.date.localeCompare(b.date));
     currentScopeMatches = matches;
-    const nextMatch = matches.find(m => m.date >= TODAY) || null;
+    const nextMatch = matches.find(m => m.date >= TODAY && !m.cancelled) || null;
 
     renderKpis(matches, nextMatch, sel ? `${sel.filter(id => COMPETITIONS.some(c => c.id === id)).length} competições selecionadas` : `${COMPETITIONS.length} competições carregadas`, 'Jogos totais');
 
@@ -1577,7 +1609,7 @@
 
     const matches = buildAugmentedMatches(competition).sort((a,b) => a.date.localeCompare(b.date));
     currentScopeMatches = matches;
-    const nextMatch = matches.find(m => m.date >= TODAY) || null;
+    const nextMatch = matches.find(m => m.date >= TODAY && !m.cancelled) || null;
 
     renderKpis(matches, nextMatch, '1ª + 2ª volta', 'Jornadas totais');
 
@@ -1620,7 +1652,7 @@
     }
     return `
       <tr class="${isNext ? 'next-row' : ''}${marianaOn ? ' mariana-row' : ''}${hasEdit ? ' match-edited' : ''}">
-        <td data-label="Torneio"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
+        <td data-label="Torneio"><span class="tournament-name">${t.name}</span>${enrollHtml(t)}${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
         <td data-label="Pavilhão" class="tournament-venue">${t.venue}</td>
         <td data-label="Localidade">${t.city}</td>
         <td data-label="Região"><span class="comp-badge">${REGION_LABELS[t.region] || t.region}</span></td>
@@ -1759,7 +1791,7 @@
     }
     return `
       <tr class="${isNext ? 'next-row' : ''}${marianaOn ? ' mariana-row' : ''}${hasEdit ? ' match-edited' : ''}">
-        <td data-label="Campeonato"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
+        <td data-label="Campeonato"><span class="tournament-name">${t.name}</span>${enrollHtml(t)}${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}</td>
         <td data-label="Categorias">${t.categories.join(', ')}</td>
         ${startCell}
         ${endCell}
@@ -1873,7 +1905,7 @@
     const noteHtml = t.note ? `<span class="row-note">${t.note}</span>` : '';
     return `
       <tr class="${isNext ? 'next-row' : ''}${marianaOn ? ' mariana-row' : ''}${hasEdit ? ' match-edited' : ''}">
-        <td data-label="Prova" class="dist-name"><span class="tournament-name">${t.name}</span>${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}${noteHtml}</td>
+        <td data-label="Prova" class="dist-name"><span class="tournament-name">${t.name}</span>${enrollHtml(t)}${isNext ? '<span class="next-pill">Próximo</span>' : ''}${marianaOn ? '<span class="mariana-pill">🏓 Mariana</span>' : ''}${noteHtml}</td>
         <td data-label="Classes">${t.categories.join(', ') || '—'}</td>
         <td data-label="Local previsto" class="tournament-venue">${t.venue || 'A indicar'}</td>
         ${dateCell}
@@ -1904,7 +1936,7 @@
   function buildDistritalPendingTable(list) {
     const rows = list.map(t => `
       <tr>
-        <td data-label="Prova"><span class="tournament-name">${t.name}</span></td>
+        <td data-label="Prova"><span class="tournament-name">${t.name}</span>${enrollHtml(t)}</td>
         <td data-label="Classes">${t.categories.join(', ') || 'Todas as classes'}</td>
         <td data-label="Local previsto" class="tournament-venue">${t.venue || 'A indicar'}</td>
         <td data-label="Data">A indicar</td>
@@ -1963,7 +1995,7 @@
     wireTournamentCheckboxes(body);
     wireTournamentDateInputs(body);
 
-    const pending = PROVAS_DISTRITAIS_POR_DEFINIR.filter(t => filters.categoria === 'all' || t.categories.includes(filters.categoria));
+    const pending = PROVAS_DISTRITAIS_POR_DEFINIR.filter(t => !onlyEnrolled || editMode || enrolled[t.name]).map(t => ({ ...t, enrolled: !!enrolled[t.name] })).filter(t => filters.categoria === 'all' || t.categories.includes(filters.categoria));
     document.getElementById('distritaisPendCount').textContent = `${pending.length} prova${pending.length === 1 ? '' : 's'}`;
     document.getElementById('distritaisPendBody').innerHTML = pending.length
       ? buildDistritalPendingTable(pending)
@@ -1993,10 +2025,10 @@
       .sort((a,b) => a.start.localeCompare(b.start));
 
     currentScopeMatches = selectedMatches;
-    const nextMatch = selectedMatches.find(m => m.date >= TODAY) || null;
+    const nextMatch = selectedMatches.find(m => m.date >= TODAY && !m.cancelled) || null;
 
     const upcomingEvents = [
-      ...selectedMatches.map(m => ({ date: m.date, label: `${m.home ? 'vs (casa)' : '@ (fora)'} ${m.opponent}`, kind: 'Jogo' })),
+      ...selectedMatches.filter(m => !m.cancelled).map(m => ({ date: m.date, label: `${m.home ? 'vs (casa)' : '@ (fora)'} ${m.opponent}`, kind: 'Jogo' })),
       ...selectedTournaments.map(t => ({ date: t.start, label: t.name, kind: 'Torneio' })),
       ...selectedNacionais.map(t => ({ date: t.start, label: t.name, kind: 'Campeonato' })),
       ...selectedDistritais.map(t => ({ date: t.start, label: t.name, kind: 'Distrital' })),
@@ -2007,9 +2039,9 @@
     kpiRow.innerHTML = '';
     const kpis = [
       { label: 'Próxima prova', value: next ? fmtDate(next.date) : '—', sub: next ? `${next.kind} · ${next.label}` : 'Nada selecionado ainda', highlight: true },
-      { label: 'Jogos de equipa', value: String(selectedMatches.length), sub: 'Selecionados para a Mariana' },
+      { label: 'Jogos de equipa', value: String(selectedMatches.filter(m => !m.cancelled).length), sub: 'Selecionados para a Mariana' },
       { label: 'Torneios + Campeonatos', value: String(selectedTournaments.length + selectedNacionais.length + selectedDistritais.length), sub: 'Selecionados para a Mariana' },
-      { label: 'Total selecionado', value: String(selectedMatches.length + selectedTournaments.length + selectedNacionais.length + selectedDistritais.length), sub: 'Provas no total' },
+      { label: 'Total selecionado', value: String(selectedMatches.filter(m => !m.cancelled).length + selectedTournaments.length + selectedNacionais.length + selectedDistritais.length), sub: 'Provas no total' },
     ];
     kpis.forEach(k => {
       const div = document.createElement('div');
@@ -2118,7 +2150,7 @@
 
   // ===== EXPORT / IMPORT RESULTS ==============================================
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, enrolled }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2143,6 +2175,7 @@
           if (parsed.marianaSelections) Object.assign(marianaSelections, parsed.marianaSelections);
           if (parsed.matchEdits) Object.assign(matchEdits, parsed.matchEdits);
           if (parsed.tournamentEdits) Object.assign(tournamentEdits, parsed.tournamentEdits);
+          if (parsed.enrolled) Object.assign(enrolled, parsed.enrolled);
         } else {
           Object.assign(results, parsed); // ficheiros antigos (só resultados, sem marcações da Mariana)
         }
@@ -2180,6 +2213,14 @@
     // simples em vez de campos de formulário.
     if (editMode) { editMode = false; renderAll(); }
     window.print();
+  });
+
+  const onlyEnrolledChk = document.getElementById('onlyEnrolledChk');
+  onlyEnrolledChk.checked = onlyEnrolled;
+  onlyEnrolledChk.addEventListener('change', () => {
+    onlyEnrolled = onlyEnrolledChk.checked;
+    try { localStorage.setItem('so-inscritos', onlyEnrolled ? '1' : '0'); } catch (e) {}
+    renderAll();
   });
 
   // ===== SYNC BUTTON + STARTUP =================================================
