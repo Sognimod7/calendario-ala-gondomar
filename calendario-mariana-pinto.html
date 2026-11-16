@@ -297,6 +297,12 @@
     vertical-align: middle;
   }
   tbody tr:last-child td { border-bottom: none; }
+  .vn-seg { display:inline-flex; margin-left:8px; border:1px solid var(--border); border-radius:999px; overflow:hidden; vertical-align:middle; }
+  .vn-btn { padding:2px 10px; font:inherit; font-size:11px; font-weight:600; border:0; background:var(--surface-2); color:var(--text-secondary); cursor:pointer; }
+  .vn-btn:disabled { cursor:default; opacity:.6; }
+  .vn-btn.active.vn-yes { background:var(--status-good); color:#fff; }
+  .vn-btn.active.vn-no { background:var(--status-critical); color:#fff; }
+  tr:has(.vn-no.active), .mg-ev:has(.vn-no.active) { opacity:.5; }
   .enroll-chk { font-size:12px; font-weight:600; margin-left:6px; white-space:nowrap; cursor:pointer; }
   .enroll-pill { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; background: color-mix(in srgb, var(--status-good) 16%, transparent); color:var(--status-good); white-space:nowrap; }
   .past-toggle-row { display:flex; gap:18px; flex-wrap:wrap; }
@@ -643,7 +649,7 @@
   <div class="tabs" role="tablist" id="tabRow"></div>
   <div class="tab-hint" id="tabHint">💡 Podes escolher várias abas ao mesmo tempo para as ver juntas — clica numa aba para a juntar à vista e clica outra vez para a retirar.</div>
   <div class="past-toggle-row"><label class="past-toggle"><input type="checkbox" id="hidePastChk"> Ocultar o que já passou (jogos e provas com data anterior a hoje)</label>
-    <label class="past-toggle"><input type="checkbox" id="onlyEnrolledChk"> Só torneios onde estamos inscritos (esconde os outros)</label></div>
+    <label class="past-toggle"><input type="checkbox" id="showHiddenChk"> Mostrar também os torneios que escondi (“Não ver”)</label></div>
 
   <div class="kpis" id="kpiRow"></div>
 
@@ -1015,28 +1021,29 @@
   // Edições manuais às datas dos torneios abertos e campeonatos nacionais,
   // keyed pelo nome (tournamentKey). Ex: { start: '2027-03-13', end: '2027-03-14' }.
   const tournamentEdits = {};
-  // Torneios/provas em que o clube está inscrito, keyed pelo nome: { 'Nome': true }.
-  const enrolled = {};
-  let onlyEnrolled = false;
-  try { onlyEnrolled = localStorage.getItem('so-inscritos') === '1'; } catch (e) {}
+  // Torneios/provas que o clube escolheu NÃO ver (escondidos), keyed pelo nome: { 'Nome': true }.
+  const hiddenT = {};
+  let showHidden = false;
+  try { showHidden = localStorage.getItem('ver-escondidos') === '1'; } catch (e) {}
   function tournamentKey(t) { return t.name; }
   function effectiveTournament(t) {
     const key = tournamentKey(t);
     const edit = tournamentEdits[key];
-    return { ...t, ...(edit || {}), enrolled: !!enrolled[key] };
+    return { ...t, ...(edit || {}), hidden: !!hiddenT[key] };
   }
-  // Com "só inscritos" ligado, os torneios sem inscrição desaparecem (exceto em modo de edição, para se poder marcar).
-  function effectiveTournaments(list) { return list.map(effectiveTournament).filter(t => !onlyEnrolled || editMode || t.enrolled); }
+  // Os torneios marcados "Não ver" desaparecem, a menos que "Mostrar também os que escondi" esteja ligado.
+  function effectiveTournaments(list) { return list.map(effectiveTournament).filter(t => showHidden || !t.hidden); }
   function enrollHtml(t) {
-    const key = tournamentKey(t);
-    if (editMode) return ` <label class="enroll-chk"><input type="checkbox" class="edit-input edit-enroll" data-enroll-key="${escapeAttr(key)}"${enrolled[key] ? ' checked' : ''}> Inscritos</label>`;
-    return enrolled[key] ? ' <span class="enroll-pill">✔ Inscritos</span>' : '';
+    const name = tournamentKey(t);
+    const key = escapeAttr(name);
+    const hid = !!hiddenT[name];
+    return ` <span class="vn-seg" role="group" aria-label="Ver este torneio"><button type="button" class="vn-btn vn-yes${hid ? '' : ' active'}" data-vn-key="${key}" data-vn-val="ver">Ver</button><button type="button" class="vn-btn vn-no${hid ? ' active' : ''}" data-vn-key="${key}" data-vn-val="nao">Não ver</button></span>`;
   }
-  document.addEventListener('change', ev => {
-    const c = ev.target.closest && ev.target.closest('.edit-enroll');
-    if (!c) return;
-    const key = c.dataset.enrollKey;
-    if (c.checked) enrolled[key] = true; else delete enrolled[key];
+  document.addEventListener('click', ev => {
+    const b = ev.target.closest && ev.target.closest('.vn-btn');
+    if (!b || b.disabled) return;
+    const key = b.dataset.vnKey;
+    if (b.dataset.vnVal === 'nao') hiddenT[key] = true; else delete hiddenT[key];
     persistState();
     renderAll();
   });
@@ -1061,12 +1068,12 @@
       if (parsed && parsed.marianaSelections) Object.assign(marianaSelections, parsed.marianaSelections);
       if (parsed && parsed.matchEdits) Object.assign(matchEdits, parsed.matchEdits);
       if (parsed && parsed.tournamentEdits) Object.assign(tournamentEdits, parsed.tournamentEdits);
-      if (parsed && parsed.enrolled) Object.assign(enrolled, parsed.enrolled);
+      if (parsed && parsed.hiddenT) Object.assign(hiddenT, parsed.hiddenT);
     } catch (e) { /* localStorage indisponível (ex: modo privado) — ignora */ }
   }
   function saveLocalCache() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, enrolled }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, hiddenT }));
     } catch (e) { /* ignora */ }
   }
 
@@ -1084,7 +1091,7 @@
   }
   async function pushRemoteState() {
     try {
-      const payload = JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, enrolled });
+      const payload = JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, hiddenT });
       await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}.json`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1111,12 +1118,12 @@
       Object.keys(marianaSelections).forEach(k => delete marianaSelections[k]);
       Object.keys(matchEdits).forEach(k => delete matchEdits[k]);
       Object.keys(tournamentEdits).forEach(k => delete tournamentEdits[k]);
-      Object.keys(enrolled).forEach(k => delete enrolled[k]);
+      Object.keys(hiddenT).forEach(k => delete hiddenT[k]);
       if (remote.results) Object.assign(results, remote.results);
       if (remote.marianaSelections) Object.assign(marianaSelections, remote.marianaSelections);
       if (remote.matchEdits) Object.assign(matchEdits, remote.matchEdits);
       if (remote.tournamentEdits) Object.assign(tournamentEdits, remote.tournamentEdits);
-      if (remote.enrolled) Object.assign(enrolled, remote.enrolled);
+      if (remote.hiddenT) Object.assign(hiddenT, remote.hiddenT);
       saveLocalCache();
       if (rerender) renderAll();
     }
@@ -2185,7 +2192,7 @@
     wireTournamentCheckboxes(body);
     wireTournamentDateInputs(body);
 
-    const pending = PROVAS_DISTRITAIS_POR_DEFINIR.filter(t => !onlyEnrolled || editMode || enrolled[t.name]).map(t => ({ ...t, enrolled: !!enrolled[t.name] })).filter(t => filters.categoria === 'all' || t.categories.includes(filters.categoria));
+    const pending = PROVAS_DISTRITAIS_POR_DEFINIR.filter(t => showHidden || !hiddenT[t.name]).map(t => ({ ...t, hidden: !!hiddenT[t.name] })).filter(t => filters.categoria === 'all' || t.categories.includes(filters.categoria));
     document.getElementById('distritaisPendCount').textContent = `${pending.length} prova${pending.length === 1 ? '' : 's'}`;
     document.getElementById('distritaisPendBody').innerHTML = pending.length
       ? buildDistritalPendingTable(pending)
@@ -2340,7 +2347,7 @@
 
   // ===== EXPORT / IMPORT RESULTS ==============================================
   document.getElementById('exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, enrolled }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ results, marianaSelections, matchEdits, tournamentEdits, hiddenT }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2365,7 +2372,7 @@
           if (parsed.marianaSelections) Object.assign(marianaSelections, parsed.marianaSelections);
           if (parsed.matchEdits) Object.assign(matchEdits, parsed.matchEdits);
           if (parsed.tournamentEdits) Object.assign(tournamentEdits, parsed.tournamentEdits);
-          if (parsed.enrolled) Object.assign(enrolled, parsed.enrolled);
+          if (parsed.hiddenT) Object.assign(hiddenT, parsed.hiddenT);
         } else {
           Object.assign(results, parsed); // ficheiros antigos (só resultados, sem marcações da Mariana)
         }
@@ -2405,11 +2412,11 @@
     window.print();
   });
 
-  const onlyEnrolledChk = document.getElementById('onlyEnrolledChk');
-  onlyEnrolledChk.checked = onlyEnrolled;
-  onlyEnrolledChk.addEventListener('change', () => {
-    onlyEnrolled = onlyEnrolledChk.checked;
-    try { localStorage.setItem('so-inscritos', onlyEnrolled ? '1' : '0'); } catch (e) {}
+  const showHiddenChk = document.getElementById('showHiddenChk');
+  showHiddenChk.checked = showHidden;
+  showHiddenChk.addEventListener('change', () => {
+    showHidden = showHiddenChk.checked;
+    try { localStorage.setItem('ver-escondidos', showHidden ? '1' : '0'); } catch (e) {}
     renderAll();
   });
 
