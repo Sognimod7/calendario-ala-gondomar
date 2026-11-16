@@ -1033,17 +1033,36 @@
   }
   // Os torneios marcados "Não ver" desaparecem, a menos que "Mostrar também os que escondi" esteja ligado.
   function effectiveTournaments(list) { return list.map(effectiveTournament).filter(t => showHidden || !t.hidden); }
-  function enrollHtml(t) {
+  // Controlo Ver / Não ver. Nas listas vale para o torneio todo; na grelha (com `day`) vale só para esse dia.
+  function enrollHtml(t, day) {
     const name = tournamentKey(t);
     const key = escapeAttr(name);
-    const hid = !!hiddenT[name];
-    return ` <span class="vn-seg" role="group" aria-label="Ver este torneio"><button type="button" class="vn-btn vn-yes${hid ? '' : ' active'}" data-vn-key="${key}" data-vn-val="ver">Ver</button><button type="button" class="vn-btn vn-no${hid ? ' active' : ''}" data-vn-key="${key}" data-vn-val="nao">Não ver</button></span>`;
+    const hid = !!hiddenT[name] || (!!day && !!hiddenT[name + '@' + day]);
+    const dayAttr = day ? ` data-vn-day="${day}"` : '';
+    return ` <span class="vn-seg" role="group" aria-label="Ver este torneio"><button type="button" class="vn-btn vn-yes${hid ? '' : ' active'}" data-vn-key="${key}"${dayAttr} data-vn-val="ver">Ver</button><button type="button" class="vn-btn vn-no${hid ? ' active' : ''}" data-vn-key="${key}"${dayAttr} data-vn-val="nao">Não ver</button></span>`;
+  }
+  function tournamentDays(name) {
+    const all = [...TOURNAMENTS, ...CAMPEONATOS_NACIONAIS, ...PROVAS_DISTRITAIS];
+    const x = all.map(o => ({ ...o, ...(tournamentEdits[tournamentKey(o)] || {}) })).find(o => o.name === name);
+    if (!x) return [];
+    const out = [];
+    const d = new Date(x.start + 'T00:00:00'), last = new Date((x.end || x.start) + 'T00:00:00');
+    for (let g = 0; d <= last && g < 40; g++, d.setDate(d.getDate() + 1)) out.push(isoOf(d));
+    return out;
   }
   document.addEventListener('click', ev => {
     const b = ev.target.closest && ev.target.closest('.vn-btn');
     if (!b || b.disabled) return;
-    const key = b.dataset.vnKey;
-    if (b.dataset.vnVal === 'nao') hiddenT[key] = true; else delete hiddenT[key];
+    const key = b.dataset.vnKey, day = b.dataset.vnDay, nao = b.dataset.vnVal === 'nao';
+    if (!day) {
+      if (nao) hiddenT[key] = true;
+      else { delete hiddenT[key]; Object.keys(hiddenT).forEach(k => { if (k.startsWith(key + '@')) delete hiddenT[k]; }); }
+    } else if (nao) {
+      hiddenT[key + '@' + day] = true;
+    } else {
+      delete hiddenT[key + '@' + day];
+      if (hiddenT[key]) { delete hiddenT[key]; tournamentDays(key).forEach(d => { if (d !== day) hiddenT[key + '@' + d] = true; }); }
+    }
     persistState();
     renderAll();
   });
@@ -1666,7 +1685,7 @@
     const el = document.createElement('div');
     el.className = 'mg-ev tourn' + (tournamentEdits[key] ? ' edited' : '');
     const range = end !== t.start ? `${t.start.slice(8)}/${t.start.slice(5,7)} a ${end.slice(8)}/${end.slice(5,7)}` : '';
-    let html = `<div class="mg-top"><span class="mg-opp">${icon} ${t.name}</span>${enrollHtml(t)}</div>
+    let html = `<div class="mg-top"><span class="mg-opp">${icon} ${t.name}</span>${enrollHtml(t, dayIso)}</div>
       <div class="mg-sub">${kind}${range ? ' · ' + range : ''}${t.city || t.venue ? ' · ' + (t.city || t.venue) : ''}</div>
       <div class="mg-sub">${(t.categories || []).join(', ')}</div>`;
     if (editMode && dayIso === t.start) {
@@ -1694,7 +1713,7 @@
       else {
         const end = e.end || e.start;
         const d = new Date(e.start + 'T00:00:00'), last = new Date(end + 'T00:00:00');
-        for (let g = 0; d <= last && g < 40; g++, d.setDate(d.getDate() + 1)) add(isoOf(d), e);
+        for (let g = 0; d <= last && g < 40; g++, d.setDate(d.getDate() + 1)) { const iso = isoOf(d); if (showHidden || !hiddenT[tournamentKey(e) + '@' + iso]) add(iso, e); }
       }
     });
     const monthsWithEvents = [...new Set(Object.keys(byDay).map(k => k.slice(0, 7)))].sort();
