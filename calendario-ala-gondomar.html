@@ -536,6 +536,20 @@
       text-transform: uppercase;
     }
   }
+
+  /* ===== Cores por competição (linhas e etiquetas) ===== */
+  .comp-campeonato-masc { --cc: #2f80ed; }
+  .comp-divisao-fem     { --cc: #e0529c; }
+  .comp-divisao-fem2    { --cc: #9b6bdf; }
+  .comp-taca            { --cc: #d9a400; }
+  .comp-cde-2a          { --cc: #14a3c7; }
+  tbody tr[class*="comp-"] { background: color-mix(in srgb, var(--cc) 9%, transparent); }
+  tbody tr[class*="comp-"]:hover { background: color-mix(in srgb, var(--cc) 17%, transparent); }
+  tbody tr[class*="comp-"] td:first-child { box-shadow: inset 5px 0 0 var(--cc); }
+  tbody tr[class*="comp-"].match-edited td:first-child, tbody tr[class*="comp-"].match-edited td.date-cell { box-shadow: inset 5px 0 0 var(--cc); }
+  tbody tr[class*="comp-"].next-row { background: color-mix(in srgb, var(--cc) 24%, transparent); outline: 2px solid var(--cc); outline-offset: -2px; }
+  .comp-badge[class*="cb-"] { background: color-mix(in srgb, var(--cc) 20%, transparent); border-color: color-mix(in srgb, var(--cc) 55%, transparent); color: color-mix(in srgb, var(--cc) 75%, var(--text-primary)); font-weight:700; }
+  .mg-comp { font-weight:700; color: color-mix(in srgb, var(--cc) 75%, var(--text-primary)); }
 </style>
 </head>
 <body>
@@ -887,7 +901,7 @@
   // closeReg / draw são abertura, fecho de inscrições e sorteio. Datas sujeitas a
   // alterações pela associação.
   const PROVAS_DISTRITAIS = [
-    { name: "Distrital Individual · S11, S15 e Sub 19",              categories: ['Sub11','Sub15','Sub19'],         start: '2026-11-07', end: '2026-11-08', venue: 'Novelas',                         openReg: '2026-10-01', closeReg: '2026-10-25', draw: '2026-10-29', note: '7 e/ou 8 de novembro' },
+    { name: "Distrital Individual · S11",              categories: ['Sub11'],         start: '2026-11-21', end: '2026-11-21', venue: 'CAR - VN Gaia',                         openReg: '2026-10-01', closeReg: '2026-10-25', draw: '2026-10-29', note: 'Sábado 21 de novembro · só Sub11' },
     { name: "Distrital Individual · S13 e S17",                      categories: ['Sub13','Sub17'],                 start: '2026-11-22', end: '2026-11-22', venue: 'CAR - VN Gaia',                   openReg: '2026-10-15', closeReg: '2026-11-08', draw: '2026-11-12' },
     { name: "Distrital Individual · S9",                             categories: ['Sub9'],                          start: '2027-01-16', end: '2027-01-16', venue: 'Casa da Juventude - Guilhabreu',  openReg: '2026-12-08', closeReg: '2027-01-03', draw: '2027-01-07' },
     { name: "Distrital Individual · Seniores",                       categories: ['Seniores'],                      start: '2027-02-06', end: '2027-02-06', venue: 'Paredes',                         openReg: '2026-12-29', closeReg: '2027-01-24', draw: '2027-01-28' },
@@ -1195,7 +1209,7 @@
     const outcome = outcomeOf(r);
     const tr = document.createElement('tr');
     const conflictTourns = opts.combined ? tournamentsOnDate(m.date) : [];
-    tr.className = [isNext ? 'next-row' : '', conflictTourns.length ? 'date-conflict-row' : '', m.cancelled ? 'match-cancelled' : ''].filter(Boolean).join(' ');
+    tr.className = [isNext ? 'next-row' : '', conflictTourns.length ? 'date-conflict-row' : '', m.cancelled ? 'match-cancelled' : '', 'comp-' + m._compId].filter(Boolean).join(' ');
 
     const nextPill = isNext ? '<span class="next-pill">Próximo</span>' : '';
     const conflictBadge = conflictTourns.length
@@ -1227,7 +1241,7 @@
       </td>`;
 
     if (opts.combined) {
-      const compCell = `<td data-label="Competição"><span class="comp-badge">${m._compLabel || '—'}</span></td>`;
+      const compCell = `<td data-label="Competição"><span class="comp-badge comp-${m._compId} cb-${m._compId}">${m._compLabel || '—'}</span></td>`;
       const jornadaLabel = m.round || `${m.volta}ª volta · J${m.jornada}`;
       const jornadaCell = `<td data-label="Jornada"><span class="jornada-combined">${jornadaLabel}</span>${nextPill}</td>`;
       tr.innerHTML = dateCell + compCell + jornadaCell + encontroCell + localCell + oppCell + timeCell + resultCell;
@@ -1497,10 +1511,10 @@
     const hasEdit = !!matchEdits[key];
     const isNext = nextMatch && m._compId === nextMatch._compId && m.encontro === nextMatch.encontro;
     const el = document.createElement('div');
-    el.className = 'mg-ev' + (m.home ? '' : ' fora') + (m.cancelled ? ' cancelled' : '') + (hasEdit ? ' edited' : '') + (isNext ? ' next' : '');
+    el.className = 'mg-ev' + (m.home ? '' : ' fora') + (m.cancelled ? ' cancelled' : '') + (hasEdit ? ' edited' : '') + (isNext ? ' next' : '') + ' comp-' + m._compId;
     const badge = outcome ? `<span class="result-badge ${outcome}">${outcome === 'win' ? 'V' : outcome === 'loss' ? 'D' : 'E'}</span>` : '';
     let html = `<div class="mg-top"><span class="mg-time">${m.time}</span><span>${m.home ? '🏠 Casa' : '✈️ Fora'}</span><span class="mg-opp">${m.opponent}</span></div>
-      <div class="mg-sub">${m._compLabel || ''} · ${jornadaLabelOf(m)}</div>`;
+      <div class="mg-sub"><span class="mg-comp">${m._compLabel || ''}</span> · ${jornadaLabelOf(m)}</div>`;
     if (m.cancelled) html += '<span class="mg-flag">Anulado · despromovido</span>';
     else html += `<div class="result-cell mg-result"><input type="number" min="0" inputmode="numeric" class="score-input ours-input" value="${r.ours ?? ''}" aria-label="Nosso resultado"><span class="score-sep">–</span><input type="number" min="0" inputmode="numeric" class="score-input theirs-input" value="${r.theirs ?? ''}" aria-label="Resultado do adversário">${badge}</div>`;
     if (editMode) {
